@@ -46,6 +46,8 @@ find_beginning:
 	COPY %G0 *%G0
 	COPY %G1 *%G1
 
+	ADDUS +next_ROM +next_ROM 1
+
 	CREATE %G0 %G1 		;%G0 = base, %G1 = limit, exact syntax needed
 
 	BNEQ +find_beginning %SP 0
