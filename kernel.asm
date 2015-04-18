@@ -4,18 +4,18 @@
 	COPY *+kernel_limit %G0
 	
 ;;; Sets up values in trap table (step 13 takes to end)
-	COPY *+INVALID_ADDRESS +handler
-	COPY *+INVALID_REGISTER +handler
-	COPY *+BUS_ERROR +handler
-	COPY *+CLOCK_ALARM +handler
-	COPY *+DIVIDE_BY_ZERO +handler
-	COPY *+OVERFLOW +handler
-	COPY *+INVALID_INSTRUCTION +handler
-	COPY *+PERMISSION_VIOLATION +handler
-	COPY *+INVALID_SHIFT_AMOUNT +handler
-	COPY *+SYSTEM_CALL +handler
-	COPY *+INVALID_DEVICE_VALUE +handler
-	COPY *+DEVICE_FAILURE +handler
+	COPY *+INVALID_ADDRESS +handler_invalid_address
+	COPY *+INVALID_REGISTER +handler_invalid_register
+	COPY *+BUS_ERROR +handler_bus_error
+	COPY *+CLOCK_ALARM +handler_clock_alarm
+	COPY *+DIVIDE_BY_ZERO +handler_divide_by_zero
+	COPY *+OVERFLOW +handler_overflow
+	COPY *+INVALID_INSTRUCTION +handler_invalid_instruction
+	COPY *+PERMISSION_VIOLATION +handler_permission_violation
+	COPY *+INVALID_SHIFT_AMOUNT +handler_invalid_shift_amount
+	COPY *+SYSTEM_CALL +handler_system_call
+	COPY *+INVALID_DEVICE_VALUE +handler_invalid_device_value
+	COPY *+DEVICE_FAILURE +handler_device_failure
 ;;; Sets trap table base
 	SETTBR +TT_base
 	SETIBR +IB_IP
@@ -132,6 +132,7 @@ print_loop_end:
 	ADDUS		%SP		%SP		4
 	ADDUS		%G5		%FP		8 		; %G5 = &ra
 	JUMP		*%G5
+
 ;;; ================================================================================================================================
 ;;; Procedure: scroll_console
 ;;; Description: Scroll the console and reset the cursor at the 0th column.
@@ -217,62 +218,161 @@ _procedure_scroll_console:
 ;;; 	       G1 = device value, G2 = boolean 2 found at bus_index
 ;;; 	       G3 = two_count
 
-	COPY %G0 *+bus_index
-	COPY %G3 0
+	COPY		%G0		*+bus_index
+	COPY		%G3		0
 ;;; Step 16 from top
 findstart:
-	COPY %G1 *%G0
-	SUB  %G2 %G1 2
-	ADD  %G0 %G0 0x0000000c
-	BNEQ +findstart %G2 0
-	ADD  %G3 1 %G3
-	BNEQ  +findstart %G3 2
-	SUB  %G0 %G0 0x00000008
+	COPY		%G1		*%G0
+	SUB				%G2		%G1		2
+	ADD				%G0		%G0		0x0000000c
+	BNEQ		+findstart		%G2		0
+	ADD				%G3		1		%G3
+	BNEQ				+findstart		%G3		2
+	SUB				%G0		%G0		0x00000008
 ;;; Step 37 (+21) from top
 ;;; G0 should now point to the kernel in Bus Controller
-	COPY %G5 *%G0
-	ADD  %G0 %G0 0x00000004
-	COPY %G4 *%G0
+	COPY		%G5		*%G0
+	ADD				%G0		%G0		0x00000004
+	COPY		%G4		*%G0
 ;;; G5 = kernel base address (0x207000), G4 = kernel end address  (0x2073a4)
-	COPY *+kernel_limit %G4
-	COPY %G0 *+bus_index
-	COPY %G3 0
+	COPY		*+kernel_limit		%G4
+	COPY		%G0		*+bus_index
+	COPY		%G3		0
 findstart_process:
-	COPY %G1 *%G0
-	SUB  %G2 %G1 2
-	ADD  %G0 %G0 0x0000000c
-	BNEQ +findstart_process %G2 0
-	ADD  %G3 1 %G3
-	BNEQ  +findstart_process %G3 3
-	SUB  %G0 %G0 0x00000008
+	COPY		%G1		*%G0
+	SUB				%G2		%G1		2
+	ADD				%G0		%G0		0x0000000c
+	BNEQ		+findstart_process		%G2		0
+	ADD				%G3		1		%G3
+	BNEQ				+findstart_process		%G3		3
+	SUB				%G0		%G0		0x00000008
 ;;; G0 should now point to the process in Bus Controller
-	COPY %G5 *%G0
-	ADD  %G0 %G0 0x00000004
-	COPY %G4 *%G0
+	COPY		%G5		*%G0
+	ADD				%G0		%G0		0x00000004
+	COPY		%G4		*%G0
 ;;; G5 = process base address, G4 = process end address
-	SUB  %G4 %G4 %G5
+	SUB				%G4		%G4		%G5
 ;;; G4 = length of process
-	COPY %G0 *+bus_index
-	ADD  %G0 %G0 0x00000008
-	COPY %G1 *%G0
+	COPY		%G0		*+bus_index
+	ADD				%G0		%G0		0x00000008
+	COPY		%G1		*%G0
 ;;; G1 = Address pointing to the address of the end of the BC
-	SUB  %G1 %G1 0x0000000c
+	SUB				%G1		%G1		0x0000000c
 ;;; G1 = Address pointing to the first triplet of the last set in the BC
-	ADD %G2 0x00001000 +kernel_limit
+	ADD		%G2		0x00001000		+kernel_limit
 ;;; G2 = Destination base
-	COPY *%G1 %G5
-	ADD  %G1 %G1 0x00000004
-	COPY *%G1 %G2
-	ADD  %G1 %G1 0x00000004
-	COPY *%G1 %G4
+	COPY		*%G1		%G5
+	ADD				%G1		%G1		0x00000004
+	COPY		*%G1		%G2
+	ADD				%G1		%G1		0x00000004
+	COPY		*%G1		%G4
 	
-	COPY %G0 2
-	JUMPMD %G2 %G0
+	COPY		%G0		2
+	JUMPMD		%G2		%G0
 ;;; Step 90 from top
-	
-;;; Handler function, should branch before this segment
+
+;;; Handler functions 	
 handler:
 	HALT
+
+
+;; Which ones do you have to save the values?
+;; Base register 0; limit register 1
+
+handler_invalid_address:
+	CALL +handler_preserve_registers +handler_invalid_address_
+	handler_invalid_address_:
+	;; handler stuff	
+
+handler_ invalid_register:
+	CALL +handler_preserv_registers +handler_invalid_register_
+	handler_invalid_register_:
+	;; handler stuff
+
+handler_bus_error:
+	CALL +handler_preserv_registers +handler_invalid_register_
+	handler_bus_error_:
+	;; handler stuff
+
+
+handler_clock_alarm:
+	CALL +handler_preserv_registers +handler_invalid_register_
+	handler_clock_alarm_:
+	;; handler stuff
+
+
+handler_divide_by_zero:
+	CALL +handler_preserv_registers +handler_invalid_register_
+	handler_divide_by_zero_:
+	;; handler stuff
+
+
+handler_overflow:
+	CALL +handler_preserv_registers +handler_invalid_register_
+	handler_overflow_:
+	;; handler stuff
+
+
+handler_invalid_instruction:
+	CALL +handler_preserv_registers +handler_invalid_register_
+	handler_invalid_instruction_:
+	;; handler stuff
+
+
+handler_permission_violation:
+	CALL +handler_preserv_registers +handler_invalid_register_
+	handler_permission_violation_:
+	;; handler stuff
+
+
+handler_invalid_shift_amount:
+	CALL +handler_preserv_registers +handler_invalid_register_
+	handler_invalid_shift_amount_:
+	;; handler stuff
+
+
+handler_system_call:
+	CALL +handler_preserv_registers +handler_invalid_register_
+	handler_system_call_:
+	;; handler stuff
+
+
+handler_invalid_device_value:
+	CALL +handler_preserv_registers +handler_invalid_register_
+	handler_invalid_device_value_:
+	;; handler stuff
+
+
+handler_device_failure: 
+	CALL +handler_preserv_registers +handler_invalid_register_
+	handler_device_failure_:
+	;; handler stuff
+
+
+handler_preserve_registers:
+
+	COPY *+_register_G0 %G0
+	COPY *+_register_G1 %G1
+	COPY *+_register_G2 %G2
+	COPY *+_register_G3 %G3
+	COPY *+_register_G4 %G4
+	COPY *+_register_G5 %G5
+	COPY *+_register_SP %SP
+	COPY *+_register_FP %FP
+
+handler_restore_registers:
+
+	COPY %G0 *+_registers_G0
+	COPY %G1 *+_registers_G1
+	COPY %G2 *+_registers_G2
+	COPY %G3 *+_registers_G3
+	COPY %G4 *+_registers_G4
+	COPY %G5 *+_registers_G5
+	COPY %SP *+_registers_SP
+	COPY %FP *+_registers_FP
+
+handler_jump_back: 
+	JUMP *IBR
 
 .Numeric
 _static_kernel_base:	0
@@ -295,6 +395,16 @@ _static_space_char:		0x20202020 ; Four copies for faster scrolling.  If used wit
 _static_cursor_char:		0x5f
 _static_newline_char:		0x0a
 
+
+;; Registers to preserve
+_register_G0
+_register_G1
+_register_G2
+_register_G3
+_register_G4
+_register_G5
+_register_SP
+_register_FP
 
 ;; Trap Table --
 TT_base:
