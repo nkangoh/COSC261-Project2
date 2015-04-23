@@ -287,67 +287,98 @@ handler_invalid_address:
 handler_ invalid_register:
 	CALL +handler_preserv_registers +handler_invalid_register_
 	handler_invalid_register_:
+		HALT
 	;; handler stuff
 
 handler_bus_error:
 	CALL +handler_preserv_registers +handler_invalid_register_
 	handler_bus_error_:
+		HALT
 	;; handler stuff
 
 
 handler_clock_alarm:
 	CALL +handler_preserv_registers +handler_invalid_register_
 	handler_clock_alarm_:
+		HALT
 	;; handler stuff
 
 
 handler_divide_by_zero:
 	CALL +handler_preserv_registers +handler_invalid_register_
 	handler_divide_by_zero_:
+		HALT
 	;; handler stuff
 
 
 handler_overflow:
 	CALL +handler_preserv_registers +handler_invalid_register_
 	handler_overflow_:
+		HALT
 	;; handler stuff
 
 
 handler_invalid_instruction:
 	CALL +handler_preserv_registers +handler_invalid_register_
 	handler_invalid_instruction_:
+		HALT
 	;; handler stuff
 
 
 handler_permission_violation:
 	CALL +handler_preserv_registers +handler_invalid_register_
 	handler_permission_violation_:
+		HALT
 	;; handler stuff
 
 
 handler_invalid_shift_amount:
 	CALL +handler_preserv_registers +handler_invalid_register_
 	handler_invalid_shift_amount_:
+		HALT
 	;; handler stuff
 
 
 handler_system_call:
 	CALL +handler_preserv_registers +handler_invalid_register_
 	handler_system_call_:
+		HALT
 	;; handler stuff
 
 
 handler_invalid_device_value:
 	CALL +handler_preserv_registers +handler_invalid_register_
 	handler_invalid_device_value_:
+		HALT
 	;; handler stuff
 
 
 handler_device_failure: 
 	CALL +handler_preserv_registers +handler_invalid_register_
 	handler_device_failure_:
+		HALT
 	;; handler stuff
 
+handler_kernel_not_found:
+	;; Panic if the kernel has an error, but being here means there was 
+	;; an error in the kernel, so print the message
+	COPY %FP +_static_kernel_error_message ;; set the kernel printing message
+	CALL +procedure_print  +handler_kernel_failure_ ;; Should print and jump back to the failure, which halts
+	handler_kernel_failure_:
+		HALT
+
+handler_process_table_empty:
+	;; Just refer to init and see how many processes are running
+	BEQ +_handler_process_table_empty_ _pt_amt_process 0
+	handler_process_table_empty_:
+		COPY %FP +_static_error_free_shutdown_message
+		Call +procedure_print +handler_process_table_empty_shutdown:
+	handler_process_table_empty_shutdown:
+		HALT
+
+
+kernel_error_message:
+	;; print that an error has occured
 
 handler_preserve_registers:
 
@@ -387,6 +418,7 @@ _static_kernel_error_RAM_not_found:	0xffff0001
 _static_kernel_error_main_returned:	0xffff0002
 _static_kernel_error_small_RAM:		0xffff0003	
 _static_kernel_error_console_not_found:	0xffff0004
+_static_kernel_error_message: ERROR_FOUND_IN_KERNEL__ABORT
 
 ;; Console management
 _static_console_width:		80
