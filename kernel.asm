@@ -22,6 +22,90 @@
 
 
 
+
+;;; Procedure: find_device
+;;; Callee preserved registers:
+;;;   [%FP - 4]:  G0
+;;;   [%FP - 8]:  G1
+;;;   [%FP - 12]: G2
+;;;   [%FP - 16]: G4
+;;; Parameters:
+;;;   [%FP + 0]: The device type to find.
+;;;   [%FP + 4]: The instance of the given device type to find (e.g., the 3rd ROM).
+;;; Caller preserved registers:
+;;;   [%FP + 8]:  FP
+;;; Return address:
+;;;   [%FP + 12]
+;;; Return value:
+;;;   [%FP + 16]: If found, a pointer to the correct device table entry; otherwise, null.
+;;; Locals:
+;;;   %G0: The device type to find (taken from parameter for convenience).
+;;;   %G1: The instance of the given device type to find. (from parameter).
+;;;   %G2: The current pointer into the device table.
+
+_procedure_find_device:
+
+	;; Prologue: Preserve the registers used on the stack.
+	SUBUS		%SP		%SP		4
+	COPY		*%SP		%G0
+	SUBUS		%SP		%SP		4
+	COPY		*%SP		%G1
+	SUBUS		%SP		%SP		4
+	COPY		*%SP		%G2
+	SUBUS		%SP		%SP		4
+	COPY		*%SP		%G4
+	
+	;; Initialize the locals.
+	COPY		%G0		*%FP
+	ADDUS		%G1		%FP		4
+	COPY		%G1		*%G1
+	COPY		%G2		*+_static_device_table_base
+	
+find_device_loop_top:
+
+	;; End the search with failure if we've reached the end of the table without finding the device.
+	BEQ		+find_device_loop_failure	*%G2		*+_static_none_device_code
+
+	;; If this entry matches the device type we seek, then decrement the instance count.  If the instance count hits zero, then
+	;; the search ends successfully.
+	BNEQ		+find_device_continue_loop	*%G2		%G0
+	SUB		%G1				%G1		1
+	BEQ		+find_device_loop_success	%G1		0
+	
+find_device_continue_loop:	
+
+	;; Advance to the next entry.
+	ADDUS		%G2			%G2		*+_static_dt_entry_size
+	JUMP		+find_device_loop_top
+
+find_device_loop_failure:
+
+	;; Set the return value to a null pointer.
+	ADDUS		%G4			%FP		16 	; %G4 = &rv
+	COPY		*%G4			0			; rv = null
+	JUMP		+find_device_return
+
+find_device_loop_success:
+
+	;; Set the return pointer into the device table that currently points to the given iteration of the given type.
+	ADDUS		%G4			%FP		16 	; %G4 = &rv
+	COPY		*%G4			%G2			; rv = &dt[<device>]
+	;; Fall through...
+	
+find_device_return:
+
+	;; Epilogue: Restore preserved registers, then return.
+	COPY		%G4		*%SP
+	ADDUS		%SP		%SP		4
+	COPY		%G2		*%SP
+	ADDUS		%SP		%SP		4
+	COPY		%G1		*%SP
+	ADDUS		%SP		%SP		4
+	COPY		%G0		*%SP
+	ADDUS		%SP		%SP		4
+	ADDUS		%G5		%FP		12 	; %G5 = &ra
+	JUMP		*%G5
+;;; ================================================================================================================================
 ;;; ================================================================================================================================
 ;;; Procedure: print
 ;;; Callee preserved registers:
@@ -38,6 +122,8 @@
 ;;;   <none>
 ;;; Locals:
 ;;;   %G0: Pointer to the current position in the string.
+
+
 	
 _procedure_print:
 
@@ -173,9 +259,7 @@ _procedure_scroll_console:
 	SUBUS		%G4		*+_static_console_limit		*+_static_console_width ; %G4 = console[limit] - width
 	ADDUS		%G4		%G4		*+_static_cursor_column			; %G4 = console[limit] - width + c
 	COPYB		*%G4		*+_static_space_char					; Clear cursor.
-
-	;; Copy from the source to the destination.
-	;;   %G3 = DMA portal
+;; Copy from the source to the destination.  ;;   %G3 = DMA portal
 	;;   %G4 = DMA transfer length
 	ADDUS		%G3		8		*+_static_device_table_base ; %G3 = &controller[limit]
 	SUBUS		%G3		*%G3		12                          ; %G3 = controller[limit] - 3*|word| = &DMA_portal
@@ -280,105 +364,120 @@ handler:
 ;; Base register 0; limit register 1
 
 handler_invalid_address:
-	CALL +handler_preserve_registers +handler_invalid_address_
+	;; Print handler error
+	;; Set the string to be copied
+	COPY *%FP +_invalid_address_message
+	CALL +procedure_print +handler_invalid_address_
 	handler_invalid_address_:
+		JUMP +end_process 
 	;; handler stuff	
 
 handler_ invalid_register:
 	CALL +handler_preserv_registers +handler_invalid_register_
+	COPY *%FP +_invalid_register_message
 	handler_invalid_register_:
-		HALT
+		JUMP +end_process 
 	;; handler stuff
 
 handler_bus_error:
 	CALL +handler_preserv_registers +handler_invalid_register_
+	COPY *%FP +_handler_bus_error:
 	handler_bus_error_:
-		HALT
+		JUMP +end_process
 	;; handler stuff
 
 
 handler_clock_alarm:
 	CALL +handler_preserv_registers +handler_invalid_register_
+	COPY *%FP _clock_alarm_message
 	handler_clock_alarm_:
-		HALT
+		JUMP +end_process
 	;; handler stuff
 
 
 handler_divide_by_zero:
 	CALL +handler_preserv_registers +handler_invalid_register_
+	COPY *%FP _divide_by_zero_message
 	handler_divide_by_zero_:
-		HALT
+		JUMP +end_process
 	;; handler stuff
 
 
 handler_overflow:
 	CALL +handler_preserv_registers +handler_invalid_register_
+	COPY *%FP _overflow_message
 	handler_overflow_:
-		HALT
+		JUMP +end_process
 	;; handler stuff
 
 
 handler_invalid_instruction:
 	CALL +handler_preserv_registers +handler_invalid_register_
+	COPY *%FP _invalid_instruction_message
 	handler_invalid_instruction_:
-		HALT
+		JUMP +end_process
 	;; handler stuff
 
 
 handler_permission_violation:
 	CALL +handler_preserv_registers +handler_invalid_register_
+	COPY *%FP _permission_violation_message
 	handler_permission_violation_:
-		HALT
+		JUMP +end_process
 	;; handler stuff
 
 
 handler_invalid_shift_amount:
 	CALL +handler_preserv_registers +handler_invalid_register_
+	COPY *%FP _invalid_shift_amount_message
 	handler_invalid_shift_amount_:
-		HALT
+		JUMP +end_process
 	;; handler stuff
 
 
 handler_system_call:
 	CALL +handler_preserv_registers +handler_invalid_register_
+	COPY *%FP _system_call_message
 	handler_system_call_:
-		HALT
+		;; Take parameters
+		;; Jump to the appropriate system call handler
+		JUMP +end_process
 	;; handler stuff
 
 
 handler_invalid_device_value:
 	CALL +handler_preserv_registers +handler_invalid_register_
+	COPY *%FP _invalid_device_value_message
 	handler_invalid_device_value_:
-		HALT
+		JUMP +end_process
 	;; handler stuff
 
 
 handler_device_failure: 
 	CALL +handler_preserv_registers +handler_invalid_register_
+	COPY *%FP _device_failure_message
 	handler_device_failure_:
-		HALT
+		JUMP +end_process
 	;; handler stuff
 
 handler_kernel_not_found:
 	;; Panic if the kernel has an error, but being here means there was 
 	;; an error in the kernel, so print the message
-	COPY %FP +_static_kernel_error_message ;; set the kernel printing message
+	COPY 		*%SP 							+_static_kernel_error_message ;; set the kernel printing message
 	CALL +procedure_print  +handler_kernel_failure_ ;; Should print and jump back to the failure, which halts
 	handler_kernel_failure_:
 		HALT
 
 handler_process_table_empty:
 	;; Just refer to init and see how many processes are running
-	BEQ +_handler_process_table_empty_ _pt_amt_process 0
+	JUMP +_handler_process_table_empty_ _pt_amt_process
+	COPY 		*%FP 							+_process_table_empty_message
+
 	handler_process_table_empty_:
 		COPY %FP +_static_error_free_shutdown_message
-		Call +procedure_print +handler_process_table_empty_shutdown:
+		CALL +procedure_print +handler_process_table_empty_shutdown:
 	handler_process_table_empty_shutdown:
-		HALT
-
-
-kernel_error_message:
-	;; print that an error has occured
+		JUMP +end_process
 
 handler_preserve_registers:
 
@@ -418,6 +517,23 @@ _static_kernel_error_RAM_not_found:	0xffff0001
 _static_kernel_error_main_returned:	0xffff0002
 _static_kernel_error_small_RAM:		0xffff0003	
 _static_kernel_error_console_not_found:	0xffff0004
+
+;; Static error messages
+_invalid_address_message : 	'ERROR: invalid address'
+_invalid_register_message:	'ERROR: invalid register'
+_invalid_address_message : 	'ERROR: invalid address'
+_clock_alarm_message:		'ERROR: clock alarm'
+_divide_by_zero_message:	'ERORR: divide by zero'
+_overflow_message: 		'ERORR: overflow'
+_invalid_instruction_message:	'ERROR: invalid instruction'
+_permission_violation_message:	'ERROR: permission violation'
+_invalid_shift_amount_message:	'ERROR: invalid shift amount'
+_system_call_message:		'System call detected'
+_invalid_device_value_message: 	'ERROR: invalid device value'
+_device_failure_message: 	'ERROR: device failure'
+_process_table_empty_message: 	'ERROR: process table'
+
+;; Error messages
 _static_kernel_error_message: ERROR_FOUND_IN_KERNEL__ABORT
 
 ;; Console management
@@ -453,6 +569,18 @@ TT_base:
 	INVALID_DEVICE_VALUE:	0
 	DEVICE_FAILURE:	0
 ;; --
+
+PT_base:		0
+	P1:	
+		P1_Base: 	0
+		P1_Limit: 	0
+	P2:	
+		P2_Base:	0
+		P2_Limit:	0
+	P3:
+		P3_Base:	0
+		P3_Limit:	0
+		
 	
 .Text
 _string_done_msg: "done. \n"
