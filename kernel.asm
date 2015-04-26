@@ -388,7 +388,26 @@ handler_bus_error:
 
 
 handler_clock_alarm:
+	;;Parameters:
+	;;[%G0] -- Device number
+
 	COPY *%FP _clock_alarm_message
+	;; preserve registers
+	BEQ +handler_preserve_registers_P1 %G0	1
+	BEQ +handler_preserve_registers_P2 %G0	2
+	BEQ +handler_preserve_registers_P3 %G0	3
+		
+	;; restore registers of the one we're going to
+	BEQ +handler_restore_registers_P2 %G0	1
+	BEQ +handler_restore_registers_P3 %G0	2
+	BEQ +handler_restore_registers_P1 %G0	3
+
+	;; jump of the ip of the next process
+	BEQ +P2_IP %G0	1
+	BEQ +P3_IP %G0	2
+	BEQ +P1_IP %G0	3
+
+
 	CALL +procedure_print +handler_invalid_address_
 	handler_clock_alarm_:
 		JUMP +end_process
@@ -477,10 +496,6 @@ handler_system_call:
 
 				JUMP 	+P2_IP
 
-			
-		
-
-
 			exit_P2:
 			        COPY 	+P2_Base 	0	
 			        COPY 	+P2_Limit 	0	
@@ -498,8 +513,6 @@ handler_system_call:
 
 
 				JUMP 	+P1_IP
-
-
 
 			exit_P3:
 			        COPY 	+P3_Base 	0	
@@ -613,6 +626,8 @@ handler_process_table_empty:
 	handler_process_table_empty_shutdown:
 		JUMP +end_process
 
+
+;; preserve
 handler_preserve_registers_P1:
 	
 	COPY +P1_register_G0 %G0
@@ -651,7 +666,8 @@ handler_preserve_registers_P3:
 	COPY +P3_register_FP %FP
 	JUMP +_TEMP_ID
 
-handler_preserver_registers_P1:
+;; restore
+handler_restore_registers_P1:
 
 	COPY %G0 +_P1_register_G0
 	COPY %G1 +_P1_register_G1
@@ -662,7 +678,7 @@ handler_preserver_registers_P1:
 	COPY %SP +_P1_register_SP
 	COPY %FP +_P1_register_FP
 
-handler_preserver_registers_P2:
+handler_restore_registers_P2:
 
 	COPY %G0 +_P2_register_G0
 	COPY %G1 +_P2_register_G1
@@ -674,7 +690,7 @@ handler_preserver_registers_P2:
 	COPY %FP +_P2_register_FP
 
 
-handler_preserver_registers_P3:
+handler_restore_registers_P3:
 
 	COPY %G0 +_P3_register_G0
 	COPY %G1 +_P3_register_G1
