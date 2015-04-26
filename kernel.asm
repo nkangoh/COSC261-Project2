@@ -392,6 +392,8 @@ handler_clock_alarm:
 	;;[%G0] -- Device number
 
 	COPY *%FP _clock_alarm_message
+	CALL +procedure_print +handler_invalid_address_
+
 	;; preserve registers
 	BEQ +handler_preserve_registers_P1 %G0	1
 	BEQ +handler_preserve_registers_P2 %G0	2
@@ -408,7 +410,6 @@ handler_clock_alarm:
 	BEQ +P1_IP %G0	3
 
 
-	CALL +procedure_print +handler_invalid_address_
 	handler_clock_alarm_:
 		JUMP +end_process
 	;; handler stuff
