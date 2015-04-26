@@ -15,21 +15,21 @@
 find_beginning:	
 ;;; Find all ROMs and CREATE each as a process
 ;;; Will be done by calling procedure_find_device SYSCALL
+
+	COPY %G0 3
+	COPY %G1 2
+	COPY %G2 +next_ROM
+
+	SYSC
 	
-	FIND_DEVICE %G0 2 next_ROM
-	ADDUS next_ROM next_ROM 1
-
 	BEQ +end_init %G0 0
-;;; %SP = Return Value = pointer to entry in device table
-	ADDUS %G0 %G0 4 	;pointer to device table entry of device base
-	ADDUS %G1 %G0 4 	;pointer to device table entry of device limit
-	COPY %G0 *%G0
-	COPY %G1 *%G1
-
-	ADDUS +next_ROM +next_ROM 1
-
-	CREATE %G0 %G1 		;%G0 = base, %G1 = limit, exact syntax needed
-
+	
+	COPY %G1 %G0
+	COPY %G0 1
+	COPY %G2 next_ROM
+	SYSC
+	
+	ADDUS next_ROM next_ROM 1
 	BNEQ +find_beginning %SP 0
 
 end_init:	HALT
