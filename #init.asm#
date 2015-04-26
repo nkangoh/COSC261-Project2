@@ -15,6 +15,10 @@
 find_beginning:	
 ;;; Find all ROMs and CREATE each as a process
 ;;; Will be done by calling procedure_find_device SYSCALL
+
+	COPY %G0 3
+	COPY %G1 2
+	COPY %G2 +next_ROM
 	
 	FIND_DEVICE %G0 2 next_ROM
 	ADDUS next_ROM next_ROM 1

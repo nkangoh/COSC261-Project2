@@ -372,7 +372,7 @@ handler_invalid_address:
 		JUMP +end_process 
 	;; handler stuff	
 
-handler_ invalid_register:
+handler_invalid_register:
 	COPY *%FP +_invalid_register_message
 	CALL +procedure_print +handler_invalid_address_
 	handler_invalid_register_:
@@ -438,6 +438,10 @@ handler_invalid_shift_amount:
 handler_system_call:
 	COPY *%FP _system_call_message
 	CALL +procedure_print +handler_invalid_address_
+	
+	BEQ +_SYSC_EXIT %G0 0
+	BEQ +_SYSC_CREATE %G0 1
+	BEQ +_SYSC_GET_ROM_COUNT %G0 2
 	handler_system_call_:
 		;; Take parameters
 		;; Jump to the appropriate system call handler
@@ -467,28 +471,49 @@ handler_system_call:
 		
 		
 		_SYSC_CREATE:
-			;; increment the rom amount, set the base
-			;; and limit of the new process and update
-			;; the process table
+			;;Parameter [%G1] = pointer to device table entry
+			;;Parameter [%G2] = current process number
+
+			ADDUS +_TEMP_IP %IP 16
+			BEQ handler_preserve_registers_P1 %G2 1
+			BEQ handler_preserve_registers_P2 %G2 2
+			BEQ handler_preserve_registers_P3 %G2 3
 	
 			ADDUS +ROM_amount +ROM_amount 1
+			ADDUS %G1 %G1 4
+			ADDUS %G2 %G1 4
+			COPY %G1 *%G1
+			COPY %G2 *%G2
+			SUBUS %G2 %G2 %G1
+			;;[%G1] = address of device base
+			;;[%G2] = address of device limit
+			
 
 			BEQ +create_P1 +ROM_amount 1
-			BEQ +create_P2 +ROM_amount 3
-			BEQ +create_P3 +ROM_amount 2
+			BEQ +create_P2 +ROM_amount 2
+			BEQ +create_P3 +ROM_amount 3
 
 			;; set the base and limit with 1KB padding, and 500b space b/w processes
 			create_P1:
+				COPY +P1_Base 0x10000
+				COPY +P1_Limit 0x15000
 				SETBS +P1_Base
 				SETLM +P1_Limit
+				JUMPMD *P1_Base 0x6
 
 			create_P2:
+				COPY +P2_Base 0x20000
+				COPY +P2_Limit 0x25000
 				SETBS +P2_Base
 				SETLM +P2_Limit
+				JUMPMD *P2_Base 0x6
 
 			create_P3:
+				COPY +P3_Base 0x30000
+				COPY +P3_Limit 0x35000
 				SETBS +P3_Base
 				SETLM +P3_Limit
+				JUMPMD *P3_Base 0x6
 		
 
 		_SYSC_GET_ROM_COUNT:
