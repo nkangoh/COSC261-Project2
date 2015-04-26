@@ -373,71 +373,71 @@ handler_invalid_address:
 	;; handler stuff	
 
 handler_ invalid_register:
-	CALL +handler_preserv_registers +handler_invalid_register_
 	COPY *%FP +_invalid_register_message
+	CALL +procedure_print +handler_invalid_address_
 	handler_invalid_register_:
 		JUMP +end_process 
 	;; handler stuff
 
 handler_bus_error:
-	CALL +handler_preserv_registers +handler_invalid_register_
 	COPY *%FP +_handler_bus_error:
+	CALL +procedure_print +handler_invalid_address_
 	handler_bus_error_:
 		JUMP +end_process
 	;; handler stuff
 
 
 handler_clock_alarm:
-	CALL +handler_preserv_registers +handler_invalid_register_
 	COPY *%FP _clock_alarm_message
+	CALL +procedure_print +handler_invalid_address_
 	handler_clock_alarm_:
 		JUMP +end_process
 	;; handler stuff
 
 
 handler_divide_by_zero:
-	CALL +handler_preserv_registers +handler_invalid_register_
 	COPY *%FP _divide_by_zero_message
+	CALL +procedure_print +handler_invalid_address_
 	handler_divide_by_zero_:
 		JUMP +end_process
 	;; handler stuff
 
 
 handler_overflow:
-	CALL +handler_preserv_registers +handler_invalid_register_
 	COPY *%FP _overflow_message
+	CALL +procedure_print +handler_invalid_address_
 	handler_overflow_:
 		JUMP +end_process
 	;; handler stuff
 
 
 handler_invalid_instruction:
-	CALL +handler_preserv_registers +handler_invalid_register_
 	COPY *%FP _invalid_instruction_message
+	CALL +procedure_print +handler_invalid_address_
 	handler_invalid_instruction_:
 		JUMP +end_process
 	;; handler stuff
 
 
 handler_permission_violation:
-	CALL +handler_preserv_registers +handler_invalid_register_
 	COPY *%FP _permission_violation_message
+	CALL +procedure_print +handler_invalid_address_
 	handler_permission_violation_:
 		JUMP +end_process
 	;; handler stuff
 
 
 handler_invalid_shift_amount:
-	CALL +handler_preserv_registers +handler_invalid_register_
 	COPY *%FP _invalid_shift_amount_message
+	CALL +procedure_print +handler_invalid_address_
 	handler_invalid_shift_amount_:
 		JUMP +end_process
 	;; handler stuff
 
 
 handler_system_call:
-	CALL +handler_preserv_registers +handler_invalid_register_
 	COPY *%FP _system_call_message
+	CALL +procedure_print +handler_invalid_address_
 	handler_system_call_:
 		;; Take parameters
 		;; Jump to the appropriate system call handler
@@ -446,16 +446,14 @@ handler_system_call:
 
 
 handler_invalid_device_value:
-	CALL +handler_preserv_registers +handler_invalid_register_
-	COPY *%FP _invalid_device_value_message
+	CALL +procedure_print +handler_invalid_address_
 	handler_invalid_device_value_:
 		JUMP +end_process
 	;; handler stuff
 
 
 handler_device_failure: 
-	CALL +handler_preserv_registers +handler_invalid_register_
-	COPY *%FP _device_failure_message
+	CALL +procedure_print +handler_invalid_address_
 	handler_device_failure_:
 		JUMP +end_process
 	;; handler stuff
@@ -463,7 +461,7 @@ handler_device_failure:
 handler_kernel_not_found:
 	;; Panic if the kernel has an error, but being here means there was 
 	;; an error in the kernel, so print the message
-	COPY 		*%SP 							+_static_kernel_error_message ;; set the kernel printing message
+	COPY 	*%SP 	+_static_kernel_error_message ;; set the kernel printing message
 	CALL +procedure_print  +handler_kernel_failure_ ;; Should print and jump back to the failure, which halts
 	handler_kernel_failure_:
 		HALT
@@ -471,10 +469,10 @@ handler_kernel_not_found:
 handler_process_table_empty:
 	;; Just refer to init and see how many processes are running
 	JUMP +_handler_process_table_empty_ _pt_amt_process
-	COPY 		*%FP 							+_process_table_empty_message
+	COPY 	*%FP 	+_process_table_empty_message
 
 	handler_process_table_empty_:
-		COPY %FP +_static_error_free_shutdown_message
+		COPY *%FP +_static_error_free_shutdown_message
 		CALL +procedure_print +handler_process_table_empty_shutdown:
 	handler_process_table_empty_shutdown:
 		JUMP +end_process
@@ -518,21 +516,6 @@ _static_kernel_error_main_returned:	0xffff0002
 _static_kernel_error_small_RAM:		0xffff0003	
 _static_kernel_error_console_not_found:	0xffff0004
 
-;; Static error messages
-_invalid_address_message : 	'ERROR: invalid address'
-_invalid_register_message:	'ERROR: invalid register'
-_invalid_address_message : 	'ERROR: invalid address'
-_clock_alarm_message:		'ERROR: clock alarm'
-_divide_by_zero_message:	'ERORR: divide by zero'
-_overflow_message: 		'ERORR: overflow'
-_invalid_instruction_message:	'ERROR: invalid instruction'
-_permission_violation_message:	'ERROR: permission violation'
-_invalid_shift_amount_message:	'ERROR: invalid shift amount'
-_system_call_message:		'System call detected'
-_invalid_device_value_message: 	'ERROR: invalid device value'
-_device_failure_message: 	'ERROR: device failure'
-_process_table_empty_message: 	'ERROR: process table'
-
 ;; Error messages
 _static_kernel_error_message: ERROR_FOUND_IN_KERNEL__ABORT
 
@@ -568,8 +551,9 @@ TT_base:
 	SYSTEM_CALL:	0
 	INVALID_DEVICE_VALUE:	0
 	DEVICE_FAILURE:	0
-;; --
 
+
+;; Process Table
 PT_base:		0
 	P1:	
 		P1_Base: 	0
@@ -587,3 +571,19 @@ _string_done_msg: "done. \n"
 _string_abort_msg: "failed! Halting now.\n"
 _string_blank_link : "	
 	
+;; Static error messages
+_invalid_address_message : 	"ERROR: invalid address"
+_invalid_register_message:	"ERROR: invalid register"
+_invalid_address_message : 	"ERROR: invalid address"
+_clock_alarm_message:		"ERROR: clock alarm"
+_divide_by_zero_message:	"ERORR: divide by zero"
+_overflow_message: 		"ERORR: overflow"
+_invalid_instruction_message:	"ERROR: invalid instruction"
+_permission_violation_message:	"ERROR: permission violation"
+_invalid_shift_amount_message:	"ERROR: invalid shift amount"
+_system_call_message:		"System call detected"
+_invalid_device_value_message: 	"ERROR: invalid device value"
+_device_failure_message: 	"ERROR: device failure"
+_process_table_empty_message: 	"ERROR: process table"
+
+
