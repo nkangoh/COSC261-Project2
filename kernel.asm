@@ -442,29 +442,76 @@ handler_system_call:
 		;; Take parameters
 		;; Jump to the appropriate system call handler
 		_SYSC_EXIT:
+			
 			;; decrement the rom amount, delete the
 			;; base and limit of the given rom and
 			;; free up the space
-	
+
+			;; Parmeters:
+			;; [%G0] -- Process ID
+
 			SUB +ROM_amount +ROM_amount 1
-			BEQ +exit_P1 +ROM_amount 1
-			BEQ +exit_P2 +ROM_amount 3
-			BEQ +exit_P3 +ROM_amount 2
+			BEQ +exit_P1 	%G0	1
+			BEQ +exit_P2 	%G0	2
+			BEQ +exit_P3 	%G0	3
 
 			;; figure out how to set them to 0 (null them out)	
 			exit_P1:
-				SETBS +P1_Base
-				SETLM +P1_Limit
+			        COPY	+P1_Base 	0	
+			        COPY 	+P1_Limit 	0	
+				SETBS 	+P1_Base
+				SETLM 	+P1_Limit
+				JUMP 	+P2_IP
+
+			
+				COPY +P1_register_G0	0
+				COPY +P1_register_G1	0
+				COPY +P1_register_G2	0
+				COPY +P1_register_G3	0
+				COPY +P1_register_G4	0
+				COPY +P1_register_G5	0
+				COPY +P1_register_SP	0
+				COPY +P1_register_FP	0
+
+
 
 			exit_P2:
-				SETBS +P2_Base
-				SETLM +P2_Limit
+			        COPY 	+P2_Base 	0	
+			        COPY 	+P2_Limit 	0	
+				SETBS 	+P2_Base
+				SETLM 	+P2_Limit
+				JUMP 	+P1_IP
+
+
+				COPY +P2_register_G0	0
+				COPY +P2_register_G1	0
+				COPY +P2_register_G2	0
+				COPY +P2_register_G3	0
+				COPY +P2_register_G4	0
+				COPY +P2_register_G5	0
+				COPY +P2_register_SP	0
+				COPY +P2_register_FP	0
+
+
 
 			exit_P3:
-				SETBS +P3_Base
-				SETLM +P3_Limit
+			        COPY 	+P3_Base 	0	
+			        COPY 	+P3_Limit 	0	
+				SETBS 	+P3_Base
+				SETLM 	+P3_Limit
+				JUMP 	+P1_IP
 		
-		
+	
+				COPY +P3_register_G0	0
+				COPY +P3_register_G1	0
+				COPY +P3_register_G2	0
+				COPY +P3_register_G3	0
+				COPY +P3_register_G4	0
+				COPY +P3_register_G5	0
+				COPY +P3_register_SP	0
+				COPY +P3_register_FP	0
+
+	
 		
 		_SYSC_CREATE:
 			;; increment the rom amount, set the base
@@ -538,30 +585,81 @@ handler_process_table_empty:
 	handler_process_table_empty_shutdown:
 		JUMP +end_process
 
-handler_preserve_registers:
+handler_preserve_registers_P1:
+	
+	COPY +P1_register_G0 %G0
+	COPY +P1_register_G1 %G1
+	COPY +P1_register_G2 %G2
+	COPY +P1_register_G3 %G3
+	COPY +P1_register_G4 %G4
+	COPY +P1_register_G5 %G5
+	COPY +P1_register_SP %SP
+	COPY +P1_register_FP %FP
+	JUMP +_TEMP_IP
 
-	COPY *+_register_G0 %G0
-	COPY *+_register_G1 %G1
-	COPY *+_register_G2 %G2
-	COPY *+_register_G3 %G3
-	COPY *+_register_G4 %G4
-	COPY *+_register_G5 %G5
-	COPY *+_register_SP %SP
-	COPY *+_register_FP %FP
 
-handler_restore_registers:
+handler_preserve_registers_P2:
+	
+	COPY +P2_register_G0 %G0
+	COPY +P2_register_G1 %G1
+	COPY +P2_register_G2 %G2
+	COPY +P2_register_G3 %G3
+	COPY +P2_register_G4 %G4
+	COPY +P2_register_G5 %G5
+	COPY +P2_register_SP %SP
+	COPY +P2_register_FP %FP
+	JUMP +_TEMP_ID
 
-	COPY %G0 *+_registers_G0
-	COPY %G1 *+_registers_G1
-	COPY %G2 *+_registers_G2
-	COPY %G3 *+_registers_G3
-	COPY %G4 *+_registers_G4
-	COPY %G5 *+_registers_G5
-	COPY %SP *+_registers_SP
-	COPY %FP *+_registers_FP
+
+handler_preserve_registers_P3:
+	
+	COPY +P3_register_G0 %G0
+	COPY +P3_register_G1 %G1
+	COPY +P3_register_G2 %G2
+	COPY +P3_register_G3 %G3
+	COPY +P3_register_G4 %G4
+	COPY +P3_register_G5 %G5
+	COPY +P3_register_SP %SP
+	COPY +P3_register_FP %FP
+	JUMP +_TEMP_ID
+
+handler_preserver_registers_P1:
+
+	COPY %G0 +_P1_register_G0
+	COPY %G1 +_P1_register_G1
+	COPY %G2 +_P1_register_G2
+	COPY %G3 +_P1_register_G3
+	COPY %G4 +_P1_register_G4
+	COPY %G5 +_P1_register_G5
+	COPY %SP +_P1_register_SP
+	COPY %FP +_P1_register_FP
+
+handler_preserver_registers_P2:
+
+	COPY %G0 +_P2_register_G0
+	COPY %G1 +_P2_register_G1
+	COPY %G2 +_P2_register_G2
+	COPY %G3 +_P2_register_G3
+	COPY %G4 +_P2_register_G4
+	COPY %G5 +_P2_register_G5
+	COPY %SP +_P2_register_SP
+	COPY %FP +_P2_register_FP
+
+
+handler_preserver_registers_P3:
+
+	COPY %G0 +_P3_register_G0
+	COPY %G1 +_P3_register_G1
+	COPY %G2 +_P3_register_G2
+	COPY %G3 +_P3_register_G3
+	COPY %G4 +_P3_register_G4
+	COPY %G5 +_P3_register_G5
+	COPY %SP +_P3_register_SP
+	COPY %FP +_P3_register_FP
+
 
 handler_jump_back: 
-	JUMP *IBR
+	JUMP *%IBR
 
 .Numeric
 _static_kernel_base:	0
@@ -596,6 +694,9 @@ _register_G4:	0
 _register_G5:	0
 _register_SP:	0
 _register_FP:	0
+
+_TEMP_IP:	0
+
 
 ;; Trap Table --
 TT_base:
