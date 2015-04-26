@@ -473,6 +473,12 @@ handler_system_call:
 	
 			ADDUS +ROM_amount +ROM_amount 1
 
+			;; get base and limit and do DMA, base of where to add it.
+			;; %G1 -- Base
+			;; %G2 -- Limit
+			;; %G3 -- Base of where to add it (may be unncessary)
+
+			
 			BEQ +create_P1 +ROM_amount 1
 			BEQ +create_P2 +ROM_amount 3
 			BEQ +create_P3 +ROM_amount 2
@@ -613,13 +619,46 @@ PT_base:		0
 	P1:	
 		P1_Base: 	0
 		P1_Limit: 	0
+		P1_IP:		0
+		P1_registers:
+			P1_register_G0:	0
+			P1_register_G1:	0
+			P1_register_G2:	0
+			P1_register_G3:	0
+			P1_register_G4:	0
+			P1_register_G5:	0
+			P1_register_SP:	0
+			P1_register_FP:	0
+
+			
 	P2:	
 		P2_Base:	0
 		P2_Limit:	0
+		P2_IP:
+		P2_registers:
+			P2_register_G0:	0
+			P2_register_G1:	0
+			P2_register_G2:	0
+			P2_register_G3:	0
+			P2_register_G4:	0
+			P2_register_G5:	0
+			P2_register_SP:	0
+			P2_register_FP:	0
+
 	P3:
 		P3_Base:	0
 		P3_Limit:	0
-		
+		P3_IP:		0
+		P3_registers:
+			P3_register_G0:	0
+			P3_register_G1:	0
+			P3_register_G2:	0
+			P3_register_G3:	0
+			P3_register_G4:	0
+			P3_register_G5:	0
+			P3_register_SP:	0
+			P3_register_FP:	0
+
 	
 .Text
 _string_done_msg: "done. \n"
