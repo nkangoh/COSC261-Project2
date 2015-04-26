@@ -589,6 +589,26 @@ handler_system_call:
 			;; copy into a register the current rom amount
 			COPY %G0 +ROM_amount
 
+		_SYSC_FIND_DEVICE:
+			;; caller prologue
+			;; preserve frame pointer 
+			SUBUS %SP %SP 12
+			COPY *%SP %FP
+			;; frame pointer points to return address
+			ADDUS %FP %SP 4
+			SUBUS %SP %SP 4
+			;; call find device procedure 
+			CALL +_procedure_find_device *%FP
+			;; caller epilogue
+			SUBUS %G5 %FP 4
+			COPY %FP *%G5
+			ADDUS %G5 %G5 8
+			COPY %SP *%G5
+			COPY %G0 *%SP
+
+			
+			
+
 
 		JUMP +end_process
 	;; handler stuff
