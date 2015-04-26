@@ -465,9 +465,7 @@ handler_system_call:
 			        COPY 	+P1_Limit 	0	
 				SETBS 	+P1_Base
 				SETLM 	+P1_Limit
-				JUMP 	+P2_IP
 
-			
 				COPY +P1_register_G0	0
 				COPY +P1_register_G1	0
 				COPY +P1_register_G2	0
@@ -477,6 +475,10 @@ handler_system_call:
 				COPY +P1_register_SP	0
 				COPY +P1_register_FP	0
 
+				JUMP 	+P2_IP
+
+			
+		
 
 
 			exit_P2:
@@ -484,8 +486,6 @@ handler_system_call:
 			        COPY 	+P2_Limit 	0	
 				SETBS 	+P2_Base
 				SETLM 	+P2_Limit
-				JUMP 	+P1_IP
-
 
 				COPY +P2_register_G0	0
 				COPY +P2_register_G1	0
@@ -497,14 +497,15 @@ handler_system_call:
 				COPY +P2_register_FP	0
 
 
+				JUMP 	+P1_IP
+
+
 
 			exit_P3:
 			        COPY 	+P3_Base 	0	
 			        COPY 	+P3_Limit 	0	
 				SETBS 	+P3_Base
 				SETLM 	+P3_Limit
-				JUMP 	+P1_IP
-		
 	
 				COPY +P3_register_G0	0
 				COPY +P3_register_G1	0
@@ -516,12 +517,14 @@ handler_system_call:
 				COPY +P3_register_FP	0
 
 	
+				JUMP 	+P1_IP
+
 		
 		_SYSC_CREATE:
 			;;Parameter [%G1] = pointer to device table entry
 			;;Parameter [%G2] = current process number
 
-			ADDUS +_TEMP_IP %IP 16
+			ADDUS +_TEMP_IP %IP 16 ;; jump to ADDUS
 			BEQ handler_preserve_registers_P1 %G2 1
 			BEQ handler_preserve_registers_P2 %G2 2
 			BEQ handler_preserve_registers_P3 %G2 3
@@ -533,7 +536,7 @@ handler_system_call:
 			COPY %G2 *%G2
 			SUBUS %G2 %G2 %G1
 			;;[%G1] = address of device base
-			;;[%G2] = address of device limit
+			;;[%G2] = length of device
 			
 
 			;; get base and limit and do DMA, base of where to add it.
