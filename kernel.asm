@@ -441,6 +441,61 @@ handler_system_call:
 	handler_system_call_:
 		;; Take parameters
 		;; Jump to the appropriate system call handler
+		_SYSC_EXIT:
+			;; decrement the rom amount, delete the
+			;; base and limit of the given rom and
+			;; free up the space
+	
+			SUB +ROM_amount +ROM_amount 1
+			BEQ +exit_P1 +ROM_amount 1
+			BEQ +exit_P2 +ROM_amount 3
+			BEQ +exit_P3 +ROM_amount 2
+
+			;; figure out how to set them to 0 (null them out)	
+			exit_P1:
+				SETBS +P1_Base
+				SETLM +P1_Limit
+
+			exit_P2:
+				SETBS +P2_Base
+				SETLM +P2_Limit
+
+			exit_P3:
+				SETBS +P3_Base
+				SETLM +P3_Limit
+		
+		
+		
+		_SYSC_CREATE:
+			;; increment the rom amount, set the base
+			;; and limit of the new process and update
+			;; the process table
+	
+			ADDUS +ROM_amount +ROM_amount 1
+
+			BEQ +create_P1 +ROM_amount 1
+			BEQ +create_P2 +ROM_amount 3
+			BEQ +create_P3 +ROM_amount 2
+
+			;; set the base and limit with 1KB padding, and 500b space b/w processes
+			create_P1:
+				SETBS +P1_Base
+				SETLM +P1_Limit
+
+			create_P2:
+				SETBS +P2_Base
+				SETLM +P2_Limit
+
+			create_P3:
+				SETBS +P3_Base
+				SETLM +P3_Limit
+		
+
+		_SYSC_GET_ROM_COUNT:
+			;; copy into a register the current rom amount
+			COPY %G0 +ROM_amount
+
+
 		JUMP +end_process
 	;; handler stuff
 
@@ -461,7 +516,7 @@ handler_device_failure:
 handler_kernel_not_found:
 	;; Panic if the kernel has an error, but being here means there was 
 	;; an error in the kernel, so print the message
-	COPY 	*%SP 	+_static_kernel_error_message ;; set the kernel printing message
+	COPY 	*%SP 	+_kernel_error_message ;; set the kernel printing message
 	CALL +procedure_print  +handler_kernel_failure_ ;; Should print and jump back to the failure, which halts
 	handler_kernel_failure_:
 		HALT
@@ -517,25 +572,24 @@ _static_kernel_error_small_RAM:		0xffff0003
 _static_kernel_error_console_not_found:	0xffff0004
 
 ;; Error messages
-_static_kernel_error_message: ERROR_FOUND_IN_KERNEL__ABORT
 
 ;; Console management
 _static_console_width:		80
 _static_console_height:		24
-_static_space_char:		0x20202020 ; Four copies for faster scrolling.  If used with COPYB, only the low byte is used.
+_static_space_char:		0x20202020 
 _static_cursor_char:		0x5f
 _static_newline_char:		0x0a
 
 
 ;; Registers to preserve
-_register_G0
-_register_G1
-_register_G2
-_register_G3
-_register_G4
-_register_G5
-_register_SP
-_register_FP
+_register_G0:	0
+_register_G1:	0
+_register_G2:	0
+_register_G3:	0
+_register_G4:	0
+_register_G5:	0
+_register_SP:	0
+_register_FP:	0
 
 ;; Trap Table --
 TT_base:
@@ -554,6 +608,7 @@ TT_base:
 
 
 ;; Process Table
+ROM_amount:		0
 PT_base:		0
 	P1:	
 		P1_Base: 	0
@@ -585,5 +640,5 @@ _system_call_message:		"System call detected"
 _invalid_device_value_message: 	"ERROR: invalid device value"
 _device_failure_message: 	"ERROR: device failure"
 _process_table_empty_message: 	"ERROR: process table"
-
+_kernel_error_message: 		"ERROR_FOUND_IN_KERNEL__ABORT"
 
