@@ -105,6 +105,7 @@ find_device_return:
 	ADDUS		%SP		%SP		4
 	ADDUS		%G5		%FP		12 	; %G5 = &ra
 	JUMP		*%G5
+
 ;;; ================================================================================================================================
 ;;; ================================================================================================================================
 ;;; Procedure: print
@@ -125,7 +126,7 @@ find_device_return:
 
 
 	
-_procedure_print:
+__procedure_print:
 
 	;; Prologue: Push preserved registers.
 	SUBUS		%SP		%SP		4
@@ -367,23 +368,23 @@ handler_invalid_address:
 	;; Print handler error
 	;; Set the string to be copied
 	COPY *%FP +_invalid_address_message
-	CALL +procedure_print +handler_invalid_address_
+	CALL +_procedure_print +handler_invalid_address_
 	handler_invalid_address_:
-		JUMP +end_process 
+		JUMP +_SYSC_EXIT
 	;; handler stuff	
 
 handler_invalid_register:
 	COPY *%FP +_invalid_register_message
-	CALL +procedure_print +handler_invalid_address_
+	CALL +_procedure_print +handler_invalid_address_
 	handler_invalid_register_:
-		JUMP +end_process 
+		JUMP +_SYSC_EXIT
 	;; handler stuff
 
 handler_bus_error:
 	COPY *%FP +_handler_bus_error:
-	CALL +procedure_print +handler_invalid_address_
+	CALL +_procedure_print +handler_invalid_address_
 	handler_bus_error_:
-		JUMP +end_process
+		JUMP +_SYSC_EXIT
 	;; handler stuff
 
 
@@ -392,7 +393,7 @@ handler_clock_alarm:
 	;;[%G0] -- Device number
 
 	COPY *%FP _clock_alarm_message
-	CALL +procedure_print +handler_invalid_address_
+	CALL +_procedure_print +handler_invalid_address_
 
 	;; preserve registers
 	ADDUS +_TEMP_IP %IP 16 ;; jump to ADDUS
@@ -414,53 +415,52 @@ handler_clock_alarm:
 
 
 	handler_clock_alarm_:
-		JUMP +end_process
+		JUMP +_SYSC_EXIT
 	;; handler stuff
 
 
 handler_divide_by_zero:
 	COPY *%FP _divide_by_zero_message
-	CALL +procedure_print +handler_invalid_address_
+	CALL +_procedure_print +handler_divide_by_zero_
 	handler_divide_by_zero_:
-		JUMP +end_process
+		JUMP +_SYSC_EXIT
 	;; handler stuff
 
 
 handler_overflow:
 	COPY *%FP _overflow_message
-	CALL +procedure_print +handler_invalid_address_
+	CALL +_procedure_print +handler_overflow_
 	handler_overflow_:
-		JUMP +end_process
+		JUMP +_SYSC_EXIT
 	;; handler stuff
 
 
 handler_invalid_instruction:
 	COPY *%FP _invalid_instruction_message
-	CALL +procedure_print +handler_invalid_address_
+	CALL +_procedure_print +handler_invalid_instruction_
 	handler_invalid_instruction_:
-		JUMP +end_process
+		JUMP +_SYSC_EXIT
 	;; handler stuff
 
 
 handler_permission_violation:
 	COPY *%FP _permission_violation_message
-	CALL +procedure_print +handler_invalid_address_
+	CALL +_procedure_print +handler_permission_violation_
 	handler_permission_violation_:
-		JUMP +end_process
+		JUMP +_SYSC_EXIT
 	;; handler stuff
 
 
 handler_invalid_shift_amount:
 	COPY *%FP _invalid_shift_amount_message
-	CALL +procedure_print +handler_invalid_address_
+	CALL +_procedure_print +handler_invalid_shift_amount_
 	handler_invalid_shift_amount_:
-		JUMP +end_process
+		JUMP +_SYSC_EXIT
 	;; handler stuff
 
 
 handler_system_call:
 	COPY *%FP _system_call_message
-	CALL +procedure_print +handler_invalid_address_
 	
 	BEQ +_SYSC_EXIT %G0 0
 	BEQ +_SYSC_CREATE %G0 1
@@ -618,28 +618,28 @@ handler_system_call:
 			COPY %SP *%G5
 			COPY %G0 *%SP		
 
-		JUMP +end_process
+		JUMP +_SYSC_EXIT
 	;; handler stuff
 
 
 handler_invalid_device_value:
-	CALL +procedure_print +handler_invalid_address_
+	CALL +_procedure_print +handler_invalid_address_
 	handler_invalid_device_value_:
-		JUMP +end_process
+		JUMP +_SYSC_EXIT
 	;; handler stuff
 
 
 handler_device_failure: 
-	CALL +procedure_print +handler_invalid_address_
+	CALL +_procedure_print +handler_invalid_address_
 	handler_device_failure_:
-		JUMP +end_process
+		JUMP +_SYSC_EXIT
 	;; handler stuff
 
 handler_kernel_not_found:
 	;; Panic if the kernel has an error, but being here means there was 
 	;; an error in the kernel, so print the message
 	COPY 	*%SP 	+_kernel_error_message ;; set the kernel printing message
-	CALL +procedure_print  +handler_kernel_failure_ ;; Should print and jump back to the failure, which halts
+	CALL +_procedure_print  +handler_kernel_failure_ ;; Should print and jump back to the failure, which halts
 	handler_kernel_failure_:
 		HALT
 
@@ -650,9 +650,9 @@ handler_process_table_empty:
 
 	handler_process_table_empty_:
 		COPY *%FP +_static_error_free_shutdown_message
-		CALL +procedure_print +handler_process_table_empty_shutdown:
+		CALL +_procedure_print +handler_process_table_empty_shutdown:
 	handler_process_table_empty_shutdown:
-		JUMP +end_process
+		JUMP +_SYSC_EXIT
 
 
 ;; preserve
