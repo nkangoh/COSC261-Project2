@@ -126,7 +126,7 @@ find_device_return:
 
 
 	
-__procedure_print:
+_procedure_print:
 
 	;; Prologue: Push preserved registers.
 	SUBUS		%SP		%SP		4
