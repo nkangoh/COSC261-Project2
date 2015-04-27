@@ -442,6 +442,8 @@ handler_system_call:
 	BEQ +_SYSC_EXIT %G0 0
 	BEQ +_SYSC_CREATE %G0 1
 	BEQ +_SYSC_GET_ROM_COUNT %G0 2
+	BEQ +_SYSC_FIND_DEVICE %G0 3
+	
 	handler_system_call_:
 		;; Take parameters
 		;; Jump to the appropriate system call handler
@@ -573,7 +575,7 @@ handler_system_call:
 		
 
 		_SYSC_GET_ROM_COUNT:
-			;; copy into a register the current rom amount
+			;; copy into a register (G0) the current rom amount
 			COPY %G0 +ROM_amount
 
 		_SYSC_FIND_DEVICE:
@@ -582,12 +584,13 @@ handler_system_call:
 			SUBUS %SP %SP 12
 			COPY *%SP %FP
 			;; frame pointer points to return address
-			ADDUS %FP %SP 4
+			ADDUS %G4 %SP 4
 			SUBUS %SP %SP 4
+			
 			;; call find device procedure 
 			CALL +_procedure_find_device *%FP
 			;; caller epilogue
-			SUBUS %G5 %FP 4
+			SUBUS %G5 %G4 4
 			COPY %FP *%G5
 			ADDUS %G5 %G5 8
 			COPY %SP *%G5
