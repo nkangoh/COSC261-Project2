@@ -395,16 +395,19 @@ handler_clock_alarm:
 	CALL +procedure_print +handler_invalid_address_
 
 	;; preserve registers
+	ADDUS +_TEMP_IP %IP 16 ;; jump to ADDUS
 	BEQ +handler_preserve_registers_P1 %G0	1
 	BEQ +handler_preserve_registers_P2 %G0	2
 	BEQ +handler_preserve_registers_P3 %G0	3
 		
 	;; restore registers of the one we're going to
+	ADDUS +_TEMP_IP %IP 16 ;; jump to ADDUS
 	BEQ +handler_restore_registers_P2 %G0	1
 	BEQ +handler_restore_registers_P3 %G0	2
 	BEQ +handler_restore_registers_P1 %G0	3
 
 	;; jump of the ip of the next process
+	ADDUS +_TEMP_IP %IP 16 ;; jump to ADDUS
 	BEQ +P2_IP %G0	1
 	BEQ +P3_IP %G0	2
 	BEQ +P1_IP %G0	3
