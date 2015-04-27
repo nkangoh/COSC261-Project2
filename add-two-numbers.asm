@@ -20,6 +20,8 @@ __start:
 	;;   dst   (%SP): A register that contains a pointer to a main memory space.
 	ADD	*%SP	%G0	*+y
 
+	COPY %G5 0xdeadbeef
+
 	;; Halt the processor.
 end:	HALT
 
