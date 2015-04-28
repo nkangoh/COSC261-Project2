@@ -1,4 +1,4 @@
-Code
+.Code
 ;;; Step 48 takes IP to the end of the BIOS
 ;;; 	set kernel_base and kernel_limit
 	COPY *+kernel_limit %G0
@@ -597,11 +597,11 @@ handler_system_call:
 	BEQ +_SYSC_CREATE %G0 1
 	BEQ +_SYSC_GET_ROM_COUNT %G0 2
 	BEQ +_SYSC_FIND_DEVICE %G0 3
-	
-	handler_system_call_:
+
+handler_system_call_:
 		;; Take parameters
 		;; Jump to the appropriate system call handler
-		_SYSC_EXIT:
+_SYSC_EXIT:
 			
 			;; decrement the rom amount, delete the
 			;; base and limit of the given rom and
@@ -615,14 +615,14 @@ handler_system_call:
 			BEQ +exit_P2 	%G0	2
 			BEQ +exit_P3 	%G0	3
 
-			;; figure out how to set them to 0 (null them out)	
-			exit_P1:
+			;; figure out how to set them to 0 (null them out)
+exit_P1:
 			        COPY	+P1_Base 	0	
 			        COPY 	+P1_Limit 	0	
 				SETBS 	+P1_Base
 				SETLM 	+P1_Limit
 
-				COPY +P1_register_G0	0
+				COPY *+P1_register_G0	0
 				COPY +P1_register_G1	0
 				COPY +P1_register_G2	0
 				COPY +P1_register_G3	0
@@ -633,7 +633,7 @@ handler_system_call:
 
 				JUMP 	+P2_IP
 
-			exit_P2:
+exit_P2:
 			        COPY 	+P2_Base 	0	
 			        COPY 	+P2_Limit 	0	
 				SETBS 	+P2_Base
@@ -651,7 +651,7 @@ handler_system_call:
 
 				JUMP 	+P1_IP
 
-			exit_P3:
+exit_P3:
 			        COPY 	+P3_Base 	0	
 			        COPY 	+P3_Limit 	0	
 				SETBS 	+P3_Base
@@ -670,16 +670,20 @@ handler_system_call:
 				JUMP 	+P1_IP
 
 		
-		_SYSC_CREATE:
+_SYSC_CREATE:
+			NOOP
+			NOOP
 			;;Parameter [%G1] = pointer to device table entry
 			;;Parameter [%G2] = current process number
 
-		 IP_T4: ADDUS +_TEMP_IP +IP_T4 16 ;; jump to ADDUS
-			BEQ handler_preserve_registers_P1 %G2 1
-			BEQ handler_preserve_registers_P2 %G2 2
-			BEQ handler_preserve_registers_P3 %G2 3
+IP_T4: ADDUS *+_TEMP_IP +IP_T4 64 ;; jump to ADDUS
+			BEQ +handler_preserve_registers_P1 %G2 1
+			BEQ +handler_preserve_registers_P2 %G2 2
+			BEQ +handler_preserve_registers_P3 %G2 3
+			NOOP
+			NOOP
 	
-			ADDUS +ROM_amount +ROM_amount 1
+			ADDUS *+ROM_amount *+ROM_amount 1
 			ADDUS %G1 %G1 4
 			ADDUS %G2 %G1 4
 			COPY %G1 *%G1
@@ -695,39 +699,39 @@ handler_system_call:
 			;; %G3 -- Base of where to add it (may be unncessary)
 
 			
-			BEQ +create_P1 +ROM_amount 1
-			BEQ +create_P2 +ROM_amount 2
-			BEQ +create_P3 +ROM_amount 3
+			BEQ +create_P1 *+ROM_amount 1
+			BEQ +create_P2 *+ROM_amount 2
+			BEQ +create_P3 *+ROM_amount 3
 
 			;; set the base and limit with 1KB padding, and 500b space b/w processes
-			create_P1:
-				COPY +P1_Base 0x10000
-				COPY +P1_Limit 0x15000
-				SETBS +P1_Base
-				SETLM +P1_Limit
-				JUMPMD *P1_Base 0x6
+create_P1:
+				COPY *+P1_Base 0x10000
+				COPY *+P1_Limit 0x15000
+				SETBS *+P1_Base
+				SETLM *+P1_Limit
+				JUMPMD *+P1_Base 0x6
 
-			create_P2:
-				COPY +P2_Base 0x20000
-				COPY +P2_Limit 0x25000
-				SETBS +P2_Base
-				SETLM +P2_Limit
-				JUMPMD *P2_Base 0x6
+create_P2:
+				COPY *+P2_Base 0x20000
+				COPY *+P2_Limit 0x25000
+				SETBS *+P2_Base
+				SETLM *+P2_Limit
+				JUMPMD *+P2_Base 0x6
 
-			create_P3:
-				COPY +P3_Base 0x30000
-				COPY +P3_Limit 0x35000
-				SETBS +P3_Base
-				SETLM +P3_Limit
-				JUMPMD *P3_Base 0x6
+create_P3:
+				COPY *+P3_Base 0x30000
+				COPY *+P3_Limit 0x35000
+				SETBS *+P3_Base
+				SETLM *+P3_Limit
+				JUMPMD *+P3_Base 0x6
 		
 
-		_SYSC_GET_ROM_COUNT:
+_SYSC_GET_ROM_COUNT:
 			;; copy into a register (G0) the current rom amount
 			COPY %G0 +ROM_amount
 			JUMP *%FP
 
-		_SYSC_FIND_DEVICE:
+_SYSC_FIND_DEVICE:
 			;; caller prologue
 			;; preserve frame pointer 
 			SUBUS %SP %SP 12
@@ -841,40 +845,40 @@ handler_process_table_empty:
 ;; preserve
 handler_preserve_registers_P1:
 	
-	COPY +P1_register_G0 %G0
-	COPY +P1_register_G1 %G1
-	COPY +P1_register_G2 %G2
-	COPY +P1_register_G3 %G3
-	COPY +P1_register_G4 %G4
-	COPY +P1_register_G5 %G5
-	COPY +P1_register_SP %SP
-	COPY +P1_register_FP %FP
-	JUMP +_TEMP_IP
+	COPY *+P1_register_G0 %G0
+	COPY *+P1_register_G1 %G1
+	COPY *+P1_register_G2 %G2
+	COPY *+P1_register_G3 %G3
+	COPY *+P1_register_G4 %G4
+	COPY *+P1_register_G5 %G5
+	COPY *+P1_register_SP %SP
+	COPY *+P1_register_FP %FP
+	JUMP *+_TEMP_IP
 
 
 handler_preserve_registers_P2:
 	
-	COPY +P2_register_G0 %G0
-	COPY +P2_register_G1 %G1
-	COPY +P2_register_G2 %G2
-	COPY +P2_register_G3 %G3
-	COPY +P2_register_G4 %G4
-	COPY +P2_register_G5 %G5
-	COPY +P2_register_SP %SP
-	COPY +P2_register_FP %FP
+	COPY *+P2_register_G0 %G0
+	COPY *+P2_register_G1 %G1
+	COPY *+P2_register_G2 %G2
+	COPY *+P2_register_G3 %G3
+	COPY *+P2_register_G4 %G4
+	COPY *+P2_register_G5 %G5
+	COPY *+P2_register_SP %SP
+	COPY *+P2_register_FP %FP
 	JUMP +_TEMP_IP
 
 
 handler_preserve_registers_P3:
 	
-	COPY +P3_register_G0 %G0
-	COPY +P3_register_G1 %G1
-	COPY +P3_register_G2 %G2
-	COPY +P3_register_G3 %G3
-	COPY +P3_register_G4 %G4
-	COPY +P3_register_G5 %G5
-	COPY +P3_register_SP %SP
-	COPY +P3_register_FP %FP
+	COPY *+P3_register_G0 %G0
+	COPY *+P3_register_G1 %G1
+	COPY *+P3_register_G2 %G2
+	COPY *+P3_register_G3 %G3
+	COPY *+P3_register_G4 %G4
+	COPY *+P3_register_G5 %G5
+	COPY *+P3_register_SP %SP
+	COPY *+P3_register_FP %FP
 	JUMP +_TEMP_IP
 
 ;; restore
