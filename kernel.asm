@@ -58,6 +58,7 @@ findstart_process:
 	SUB				%G1		%G0		0x00000012
 	COPY 				%G2		1
 	JUMP				+_SYSC_CREATE
+;;; 120 takes us here
 
 ;;; Procedure: find_device
 ;;; Callee preserved registers:
@@ -670,7 +671,7 @@ exit_P3:
 				JUMP 	+P1_IP
 
 		
-		_SYSC_CREATE:
+_SYSC_CREATE:
 			;;Parameter [%G1] = pointer to device table entry
 			;;Parameter [%G2] = current process number
 
