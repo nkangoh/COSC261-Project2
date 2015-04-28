@@ -363,7 +363,7 @@ handler_bus_error:
 
 handler_clock_alarm:
 	;;Parameters:
-	;;[%G0] -- Device number
+	;;[%G0] -- Current device number
 
 	COPY *%FP _clock_alarm_message
 	CALL +_procedure_print *+handler_invalid_address_
@@ -374,7 +374,38 @@ IP_T1: 	ADDUS +_TEMP_IP +IP_T1 16 ;; jump to ADDUS
 	BEQ +handler_preserve_registers_P1 %G0	1
 	BEQ +handler_preserve_registers_P2 %G0	2
 	BEQ +handler_preserve_registers_P3 %G0	3
-		
+
+	BEQ +findnext_P1 %G0 1
+	BEQ +findnext_P2 %G0 2
+	BEQ +findnext_P3 %G0 3
+
+findnext_P1:	BNEQ +findnext_P1P2 +P2_Base 0
+	BNEQ +findnextP1P3 +P3_Base 0
+	COPY %G0 1
+	JUMP +IP_T3 
+findnext_P1P2:	COPY %G0 2
+	JUMP +IP_T2
+findnext_P1P3:	COPY %G0 3
+	JUMP +IP_T2
+
+findnext_P2:	BNEQ +findnext_P2P3 +P3_Base 0
+	BNEQ +findnextP2P1 +P1_Base 0
+	COPY %G0 2
+	JUMP +IP_T3 
+findnext_P2P3:	COPY %G0 3
+	JUMP +IP_T2
+findnext_P2P1:	COPY %G0 1
+	JUMP +IP_T2
+
+findnext_P3:	BNEQ +findnext_P3P1 +P1_Base 0
+	BNEQ +findnextP3P2 +P2_Base 0
+	COPY %G0 3
+	JUMP +IP_T3 
+findnext_P3P1:	COPY %G0 1
+	JUMP +IP_T2
+findnext_P3P2:	COPY %G0 2
+	JUMP +IP_T2
+	
 	;; restore registers of the one we're going to
 IP_T2:	ADDUS +_TEMP_IP +IP_T2 16 ;; jump to ADDUS
 	BEQ +handler_restore_registers_P2 %G0	1
@@ -386,11 +417,6 @@ IP_T3:  ADDUS +_TEMP_IP +IP_T3 16 ;; jump to ADDUS
 	BEQ +P2_IP %G0	1
 	BEQ +P3_IP %G0	2
 	BEQ +P1_IP %G0	3
-
-
-	handler_clock_alarm_:
-		JUMP +_SYSC_EXIT
-	;; handler stuff
 
 
 handler_divide_by_zero:

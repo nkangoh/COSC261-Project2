@@ -1,12 +1,17 @@
 .Code
 
-	COPY	%G0	0x10
-
-	;; 	JUMPMD	0x10	0x6
+	COPY	%G0	0x0
+	BEQ +start %G0 0
 	
-	SETBS	0x5000
-	SETLM	0x20000
 
-	JUMPMD 0x7000	0x6
+foo:	COPY %G1 0xdeadbeef
+	JUMP *%G5
+
+
+start:	COPY %G5 +start
+	ADDUS %G5 %G5 12
+	CALL +foo *%G5
+	COPY %G2 0xdeadcafe
+
 	
 	HALT
