@@ -1,4 +1,4 @@
-.Code
+Code
 ;;; Step 48 takes IP to the end of the BIOS
 ;;; 	set kernel_base and kernel_limit
 	COPY *+kernel_limit %G0
@@ -750,27 +750,6 @@ handler_system_call:
 			COPY %SP *%G5
 			COPY %G0 *%SP		
 			JUMP *%FP
-		_PRINT:
-			;; caller prologue
-			;; preserve frame pointer 
-			SUBUS %SP %SP 8
-			COPY *%SP %FP
-			;; put in arguments
-			SUBUS %FP %SP 4
-			COPY *%FP _null_terminated_string
-			;; stack pointer is at top of stack
-			SUBUS %SP %SP 4
-			;; %G5 points to return address
-			ADDUS %G5 %FP 8
-			;; call print
-			CALL +_procedure_print *%G5
-			;; caller epilogue
-			ADDUS %G5 %FP 4
-			COPY %FP *%G5
-			ADDUS %G5 %G5 4
-			COPY %SP *%G5
-		;; handler stuff
-
 
 handler_invalid_device_value:
 	SUBUS %SP %SP 8
