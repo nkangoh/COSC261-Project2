@@ -34,7 +34,7 @@ find_beginning:
 
 end_init:	HALT
 	
-.Numerics
+.Numeric
 self_base:	0
 self_limit:	0
 next_ROM:	 4

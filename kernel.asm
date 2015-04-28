@@ -182,8 +182,7 @@ _procedure_print:
 	SUBUS		%SP		%SP		4		; Push arg[0]
 	COPY		*%SP		*+_static_console_device_code	; Find a console device.
 	COPY		%FP		%SP				; Update %FP
-	ADDUS		%G5		%SP		12		; %G5 = &ra
-	CALL		+_procedure_find_device		*%G5
+	ADDUS		%G5		%SP		12		; %G5 = &ra	CALL		+_procedure_find_device		*%G5
 	ADDUS		%SP		%SP		8 		; Pop arg[0,1]
 	COPY		%FP		*%SP 				; %FP = pfp
 	ADDUS		%SP		%SP		8		; Pop pfp / ra
@@ -623,7 +622,7 @@ exit_P1:
 				SETBS 	+P1_Base
 				SETLM 	+P1_Limit
 
-				COPY +P1_register_G0	0
+				COPY *+P1_register_G0	0
 				COPY +P1_register_G1	0
 				COPY +P1_register_G2	0
 				COPY +P1_register_G3	0
@@ -672,15 +671,19 @@ exit_P3:
 
 		
 _SYSC_CREATE:
+			NOOP
+			NOOP
 			;;Parameter [%G1] = pointer to device table entry
 			;;Parameter [%G2] = current process number
 
-IP_T4: ADDUS +_TEMP_IP +IP_T4 16 ;; jump to ADDUS
-			BEQ handler_preserve_registers_P1 %G2 1
-			BEQ handler_preserve_registers_P2 %G2 2
-			BEQ handler_preserve_registers_P3 %G2 3
+IP_T4: ADDUS *+_TEMP_IP +IP_T4 64 ;; jump to ADDUS
+			BEQ +handler_preserve_registers_P1 %G2 1
+			BEQ +handler_preserve_registers_P2 %G2 2
+			BEQ +handler_preserve_registers_P3 %G2 3
+			NOOP
+			NOOP
 	
-			ADDUS +ROM_amount +ROM_amount 1
+			ADDUS *+ROM_amount *+ROM_amount 1
 			ADDUS %G1 %G1 4
 			ADDUS %G2 %G1 4
 			COPY %G1 *%G1
@@ -696,31 +699,31 @@ IP_T4: ADDUS +_TEMP_IP +IP_T4 16 ;; jump to ADDUS
 			;; %G3 -- Base of where to add it (may be unncessary)
 
 			
-			BEQ +create_P1 +ROM_amount 1
-			BEQ +create_P2 +ROM_amount 2
-			BEQ +create_P3 +ROM_amount 3
+			BEQ +create_P1 *+ROM_amount 1
+			BEQ +create_P2 *+ROM_amount 2
+			BEQ +create_P3 *+ROM_amount 3
 
 			;; set the base and limit with 1KB padding, and 500b space b/w processes
 create_P1:
-				COPY +P1_Base 0x10000
-				COPY +P1_Limit 0x15000
-				SETBS +P1_Base
-				SETLM +P1_Limit
-				JUMPMD *P1_Base 0x6
+				COPY *+P1_Base 0x10000
+				COPY *+P1_Limit 0x15000
+				SETBS *+P1_Base
+				SETLM *+P1_Limit
+				JUMPMD *+P1_Base 0x6
 
 create_P2:
-				COPY +P2_Base 0x20000
-				COPY +P2_Limit 0x25000
-				SETBS +P2_Base
-				SETLM +P2_Limit
-				JUMPMD *P2_Base 0x6
+				COPY *+P2_Base 0x20000
+				COPY *+P2_Limit 0x25000
+				SETBS *+P2_Base
+				SETLM *+P2_Limit
+				JUMPMD *+P2_Base 0x6
 
 create_P3:
-				COPY +P3_Base 0x30000
-				COPY +P3_Limit 0x35000
-				SETBS +P3_Base
-				SETLM +P3_Limit
-				JUMPMD *P3_Base 0x6
+				COPY *+P3_Base 0x30000
+				COPY *+P3_Limit 0x35000
+				SETBS *+P3_Base
+				SETLM *+P3_Limit
+				JUMPMD *+P3_Base 0x6
 		
 
 _SYSC_GET_ROM_COUNT:
@@ -751,27 +754,6 @@ _SYSC_FIND_DEVICE:
 			COPY %SP *%G5
 			COPY %G0 *%SP		
 			JUMP *%FP
-_PRINT:
-			;; caller prologue
-			;; preserve frame pointer 
-			SUBUS %SP %SP 8
-			COPY *%SP %FP
-			;; put in arguments
-			SUBUS %FP %SP 4
-			COPY *%FP _null_terminated_string
-			;; stack pointer is at top of stack
-			SUBUS %SP %SP 4
-			;; %G5 points to return address
-			ADDUS %G5 %FP 8
-			;; call print
-			CALL +_procedure_print *%G5
-			;; caller epilogue
-			ADDUS %G5 %FP 4
-			COPY %FP *%G5
-			ADDUS %G5 %G5 4
-			COPY %SP *%G5
-		;; handler stuff
-
 
 handler_invalid_device_value:
 	SUBUS %SP %SP 8
@@ -863,40 +845,40 @@ handler_process_table_empty:
 ;; preserve
 handler_preserve_registers_P1:
 	
-	COPY +P1_register_G0 %G0
-	COPY +P1_register_G1 %G1
-	COPY +P1_register_G2 %G2
-	COPY +P1_register_G3 %G3
-	COPY +P1_register_G4 %G4
-	COPY +P1_register_G5 %G5
-	COPY +P1_register_SP %SP
-	COPY +P1_register_FP %FP
-	JUMP +_TEMP_IP
+	COPY *+P1_register_G0 %G0
+	COPY *+P1_register_G1 %G1
+	COPY *+P1_register_G2 %G2
+	COPY *+P1_register_G3 %G3
+	COPY *+P1_register_G4 %G4
+	COPY *+P1_register_G5 %G5
+	COPY *+P1_register_SP %SP
+	COPY *+P1_register_FP %FP
+	JUMP *+_TEMP_IP
 
 
 handler_preserve_registers_P2:
 	
-	COPY +P2_register_G0 %G0
-	COPY +P2_register_G1 %G1
-	COPY +P2_register_G2 %G2
-	COPY +P2_register_G3 %G3
-	COPY +P2_register_G4 %G4
-	COPY +P2_register_G5 %G5
-	COPY +P2_register_SP %SP
-	COPY +P2_register_FP %FP
+	COPY *+P2_register_G0 %G0
+	COPY *+P2_register_G1 %G1
+	COPY *+P2_register_G2 %G2
+	COPY *+P2_register_G3 %G3
+	COPY *+P2_register_G4 %G4
+	COPY *+P2_register_G5 %G5
+	COPY *+P2_register_SP %SP
+	COPY *+P2_register_FP %FP
 	JUMP +_TEMP_IP
 
 
 handler_preserve_registers_P3:
 	
-	COPY +P3_register_G0 %G0
-	COPY +P3_register_G1 %G1
-	COPY +P3_register_G2 %G2
-	COPY +P3_register_G3 %G3
-	COPY +P3_register_G4 %G4
-	COPY +P3_register_G5 %G5
-	COPY +P3_register_SP %SP
-	COPY +P3_register_FP %FP
+	COPY *+P3_register_G0 %G0
+	COPY *+P3_register_G1 %G1
+	COPY *+P3_register_G2 %G2
+	COPY *+P3_register_G3 %G3
+	COPY *+P3_register_G4 %G4
+	COPY *+P3_register_G5 %G5
+	COPY *+P3_register_SP %SP
+	COPY *+P3_register_FP %FP
 	JUMP +_TEMP_IP
 
 ;; restore
