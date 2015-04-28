@@ -16,12 +16,48 @@
 	COPY *+SYSTEM_CALL +handler_system_call
 	COPY *+INVALID_DEVICE_VALUE +handler_invalid_device_value
 	COPY *+DEVICE_FAILURE +handler_device_failure
+
 ;;; Sets trap table base
 	SETTBR +TT_base
 	SETIBR +IB_IP
 
+;; ================================================================================================================================
 
+;;; Find next ROM device
+;;; Registers: G0 = address of next device in BC
+;;; 	       G1 = device value, G2 = boolean 2 found at bus_index
+;;; 	       G3 = two_count
 
+	COPY		%G0		*+bus_index
+	COPY		%G3		0
+;;; Step 16 from top
+findstart:
+	COPY		%G1		*%G0
+	SUB				%G2		%G1		2
+	ADD				%G0		%G0		0x0000000c
+	BNEQ		+findstart		%G2		0
+	ADD				%G3		1		%G3
+	BNEQ				+findstart		%G3		2
+	SUB				%G0		%G0		0x00000008
+;;; Step 37 (+21) from top
+;;; G0 should now point to the kernel in Bus Controller
+	COPY		%G5		*%G0
+	ADD				%G0		%G0		0x00000004
+	COPY		%G4		*%G0
+;;; G5 = kernel base address (0x207000), G4 = kernel end address  (0x2073a4)
+	COPY		*+kernel_limit		%G4
+	COPY		%G0		*+bus_index
+	COPY		%G3		0
+findstart_process:
+	COPY		%G1		*%G0
+	SUB				%G2		%G1		2
+	ADD				%G0		%G0		0x0000000c
+	BNEQ		+findstart_process		%G2		0
+	ADD				%G3		1		%G3
+	BNEQ				+findstart_process		%G3		3
+	SUB				%G1		%G0		0x00000012
+	COPY 				%G2		1
+	JUMP				+_SYSC_CREATE
 
 ;;; Procedure: find_device
 ;;; Callee preserved registers:
@@ -296,71 +332,8 @@ _procedure_scroll_console:
 	ADDUS		%SP		%SP		4
 	ADDUS		%G5		%FP		4 		; %G5 = &ra
 	JUMP		*%G5
-;;; ================================================================================================================================
-
-;;; Find next ROM device
-;;; Registers: G0 = address of next device in BC
-;;; 	       G1 = device value, G2 = boolean 2 found at bus_index
-;;; 	       G3 = two_count
-
-	COPY		%G0		*+bus_index
-	COPY		%G3		0
-;;; Step 16 from top
-findstart:
-	COPY		%G1		*%G0
-	SUB				%G2		%G1		2
-	ADD				%G0		%G0		0x0000000c
-	BNEQ		+findstart		%G2		0
-	ADD				%G3		1		%G3
-	BNEQ				+findstart		%G3		2
-	SUB				%G0		%G0		0x00000008
-;;; Step 37 (+21) from top
-;;; G0 should now point to the kernel in Bus Controller
-	COPY		%G5		*%G0
-	ADD				%G0		%G0		0x00000004
-	COPY		%G4		*%G0
-;;; G5 = kernel base address (0x207000), G4 = kernel end address  (0x2073a4)
-	COPY		*+kernel_limit		%G4
-	COPY		%G0		*+bus_index
-	COPY		%G3		0
-findstart_process:
-	COPY		%G1		*%G0
-	SUB				%G2		%G1		2
-	ADD				%G0		%G0		0x0000000c
-	BNEQ		+findstart_process		%G2		0
-	ADD				%G3		1		%G3
-	BNEQ				+findstart_process		%G3		3
-	SUB				%G0		%G0		0x00000008
-;;; G0 should now point to the process in Bus Controller
-	COPY		%G5		*%G0
-	ADD				%G0		%G0		0x00000004
-	COPY		%G4		*%G0
-;;; G5 = process base address, G4 = process end address
-	SUB				%G4		%G4		%G5
-;;; G4 = length of process
-	COPY		%G0		*+bus_index
-	ADD				%G0		%G0		0x00000008
-	COPY		%G1		*%G0
-;;; G1 = Address pointing to the address of the end of the BC
-	SUB				%G1		%G1		0x0000000c
-;;; G1 = Address pointing to the first triplet of the last set in the BC
-	ADD		%G2		0x00001000		+kernel_limit
-;;; G2 = Destination base
-	COPY		*%G1		%G5
-	ADD				%G1		%G1		0x00000004
-	COPY		*%G1		%G2
-	ADD				%G1		%G1		0x00000004
-	COPY		*%G1		%G4
-	
-	COPY		%G0		2
-	JUMPMD		%G2		%G0
-;;; Step 90 from top
-
+;
 ;;; Handler functions 	
-handler:
-	HALT
-
-
 ;; Which ones do you have to save the values?
 ;; Base register 0; limit register 1
 
@@ -382,9 +355,8 @@ handler_invalid_register:
 	;; handler stuff
 
 handler_bus_error:
-	COPY *%FP +_handler_bus_error:
-	CALL +_procedure_print *+handler_invalid_address_
-	handler_bus_error_:
+	COPY *%FP +_bus_error_message
+	CALL +_procedure_print *%FP
 		JUMP +_SYSC_EXIT
 	;; handler stuff
 
@@ -596,7 +568,7 @@ handler_system_call:
 		_SYSC_GET_ROM_COUNT:
 			;; copy into a register (G0) the current rom amount
 			COPY %G0 +ROM_amount
-			JUMP %IBR
+			JUMP *%FP
 
 		_SYSC_FIND_DEVICE:
 			;; caller prologue
@@ -620,7 +592,7 @@ handler_system_call:
 			ADDUS %G5 %G5 8
 			COPY %SP *%G5
 			COPY %G0 *%SP		
-			JUMP %IBR
+			JUMP *%FP
 
 	;; handler stuff
 
@@ -648,12 +620,12 @@ handler_kernel_not_found:
 
 handler_process_table_empty:
 	;; Just refer to init and see how many processes are running
-	CALL +_SYSC_GET_ROM_COUNT *+handler_process_table_empty_
+	BEQ +handler_process_table_empty_ ROM_amount 0
 	COPY 	*%FP 	+_process_table_empty_message
 
 	handler_process_table_empty_:
-		COPY *%FP +_static_error_free_shutdown_message
-		CALL +_procedure_print *+handler_process_table_empty_shutdown:
+		COPY *%FP +_error_free_shutdown_message
+		;;CALL +_procedure_print *+handler_process_table_empty_shutdown:
 
 	handler_process_table_empty_shutdown:
 		JUMP +_SYSC_EXIT
@@ -683,7 +655,7 @@ handler_preserve_registers_P2:
 	COPY +P2_register_G5 %G5
 	COPY +P2_register_SP %SP
 	COPY +P2_register_FP %FP
-	JUMP +_TEMP_ID
+	JUMP +_TEMP_IP
 
 
 handler_preserve_registers_P3:
@@ -696,50 +668,68 @@ handler_preserve_registers_P3:
 	COPY +P3_register_G5 %G5
 	COPY +P3_register_SP %SP
 	COPY +P3_register_FP %FP
-	JUMP +_TEMP_ID
+	JUMP +_TEMP_IP
 
 ;; restore
 handler_restore_registers_P1:
 
-	COPY %G0 +_P1_register_G0
-	COPY %G1 +_P1_register_G1
-	COPY %G2 +_P1_register_G2
-	COPY %G3 +_P1_register_G3
-	COPY %G4 +_P1_register_G4
-	COPY %G5 +_P1_register_G5
-	COPY %SP +_P1_register_SP
-	COPY %FP +_P1_register_FP
+	COPY %G0 +P1_register_G0
+	COPY %G1 +P1_register_G1
+	COPY %G2 +P1_register_G2
+	COPY %G3 +P1_register_G3
+	COPY %G4 +P1_register_G4
+	COPY %G5 +P1_register_G5
+	COPY %SP +P1_register_SP
+	COPY %FP +P1_register_FP
 
 handler_restore_registers_P2:
 
-	COPY %G0 +_P2_register_G0
-	COPY %G1 +_P2_register_G1
-	COPY %G2 +_P2_register_G2
-	COPY %G3 +_P2_register_G3
-	COPY %G4 +_P2_register_G4
-	COPY %G5 +_P2_register_G5
-	COPY %SP +_P2_register_SP
-	COPY %FP +_P2_register_FP
+	COPY %G0 +P2_register_G0
+	COPY %G1 +P2_register_G1
+	COPY %G2 +P2_register_G2
+	COPY %G3 +P2_register_G3
+	COPY %G4 +P2_register_G4
+	COPY %G5 +P2_register_G5
+	COPY %SP +P2_register_SP
+	COPY %FP +P2_register_FP
 
 
 handler_restore_registers_P3:
 
-	COPY %G0 +_P3_register_G0
-	COPY %G1 +_P3_register_G1
-	COPY %G2 +_P3_register_G2
-	COPY %G3 +_P3_register_G3
-	COPY %G4 +_P3_register_G4
-	COPY %G5 +_P3_register_G5
-	COPY %SP +_P3_register_SP
-	COPY %FP +_P3_register_FP
+	COPY %G0 +P3_register_G0
+	COPY %G1 +P3_register_G1
+	COPY %G2 +P3_register_G2
+	COPY %G3 +P3_register_G3
+	COPY %G4 +P3_register_G4
+	COPY %G5 +P3_register_G5
+	COPY %SP +P3_register_SP
+	COPY %FP +P3_register_FP
 
 
 handler_jump_back: 
-	JUMP *%IBR
+	JUMP *%FP
 
 .Numeric
-_static_kernel_base:	0
-_static_kernel_limit:	0
+
+_TEMP_IP:	0
+_static_statics_start_marker:	0xdeadcafe
+_static_dt_entry_size:		12
+_static_dt_base_offset:		4
+_static_dt_limit_offset:	8
+_static_controller_device_code:	1
+_static_ROM_device_code:	2
+_static_RAM_device_code:	3
+_static_console_device_code:	4
+_static_none_device_code: 0
+
+_static_cursor_column:		0	; The column position of the cursor (always on the last row).
+_static_RAM_base:		0
+_static_RAM_limit:		0
+_static_console_base:		0
+_static_console_limit:		0
+_static_kernel_base:		0
+_static_kernel_limit:		0
+
 process_base:	
 IB_IP:	0
 IB_MISC:	0
@@ -750,7 +740,7 @@ _static_kernel_error_RAM_not_found:	0xffff0001
 _static_kernel_error_main_returned:	0xffff0002
 _static_kernel_error_small_RAM:		0xffff0003	
 _static_kernel_error_console_not_found:	0xffff0004
-
+_static_device_table_base:		0x1000
 ;; Error messages
 
 ;; Console management
@@ -771,7 +761,6 @@ _register_G5:	0
 _register_SP:	0
 _register_FP:	0
 
-_TEMP_IP:	0
 
 
 ;; Trap Table --
@@ -836,16 +825,16 @@ PT_base:		0
 			P3_register_SP:	0
 			P3_register_FP:	0
 
+kernel_limit:	0
 	
 .Text
 _string_done_msg: "done. \n"
 _string_abort_msg: "failed! Halting now.\n"
-_string_blank_link : "	
+_string_blank_line: "ENDLINE"
 	
 ;; Static error messages
 _invalid_address_message: 	"ERROR: invalid address"
 _invalid_register_message:	"ERROR: invalid register"
-_invalid_address_message: 	"ERROR: invalid address"
 _clock_alarm_message:		"ERROR: clock alarm"
 _divide_by_zero_message:	"ERORR: divide by zero"
 _overflow_message: 		"ERORR: overflow"
@@ -856,5 +845,6 @@ _system_call_message:		"System call detected"
 _invalid_device_value_message: 	"ERROR: invalid device value"
 _device_failure_message: 	"ERROR: device failure"
 _process_table_empty_message: 	"ERROR: process table"
+_bus_error_message:	 	"ERROR: bus error"
 _kernel_error_message: 		"ERROR_FOUND_IN_KERNEL__ABORT"
-
+_error_free_shutdown_message:	"ERROR: error free shutdown"
