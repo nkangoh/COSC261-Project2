@@ -368,7 +368,7 @@ handler_invalid_address:
 	;; Print handler error
 	;; Set the string to be copied
 	COPY *%FP +_invalid_address_message
-	CALL +_procedure_print *+handler_invalid_address_
+	CALL +_procedure_print *%FP
 	handler_invalid_address_:
 		JUMP +_SYSC_EXIT
 	;; handler stuff	
@@ -397,19 +397,20 @@ handler_clock_alarm:
 	CALL +_procedure_print *+handler_invalid_address_
 
 	;; preserve registers
-	ADDUS +_TEMP_IP %IP 16 ;; jump to ADDUS
+
+IP_T1: 	ADDUS +_TEMP_IP +IP_T1 16 ;; jump to ADDUS
 	BEQ +handler_preserve_registers_P1 %G0	1
 	BEQ +handler_preserve_registers_P2 %G0	2
 	BEQ +handler_preserve_registers_P3 %G0	3
 		
 	;; restore registers of the one we're going to
-	ADDUS +_TEMP_IP %IP 16 ;; jump to ADDUS
+IP_T2:	ADDUS +_TEMP_IP +IP_T2 16 ;; jump to ADDUS
 	BEQ +handler_restore_registers_P2 %G0	1
 	BEQ +handler_restore_registers_P3 %G0	2
 	BEQ +handler_restore_registers_P1 %G0	3
 
 	;; jump of the ip of the next process
-	ADDUS +_TEMP_IP %IP 16 ;; jump to ADDUS
+IP_T3:  ADDUS +_TEMP_IP +IP_T3 16 ;; jump to ADDUS
 	BEQ +P2_IP %G0	1
 	BEQ +P3_IP %G0	2
 	BEQ +P1_IP %G0	3
@@ -544,7 +545,7 @@ handler_system_call:
 			;;Parameter [%G1] = pointer to device table entry
 			;;Parameter [%G2] = current process number
 
-			ADDUS +_TEMP_IP %IP 16 ;; jump to ADDUS
+		 IP_T4: ADDUS +_TEMP_IP +IP_T4 16 ;; jump to ADDUS
 			BEQ handler_preserve_registers_P1 %G2 1
 			BEQ handler_preserve_registers_P2 %G2 2
 			BEQ handler_preserve_registers_P3 %G2 3
@@ -595,6 +596,7 @@ handler_system_call:
 		_SYSC_GET_ROM_COUNT:
 			;; copy into a register (G0) the current rom amount
 			COPY %G0 +ROM_amount
+			JUMP %IBR
 
 		_SYSC_FIND_DEVICE:
 			;; caller prologue
@@ -618,8 +620,8 @@ handler_system_call:
 			ADDUS %G5 %G5 8
 			COPY %SP *%G5
 			COPY %G0 *%SP		
+			JUMP %IBR
 
-		JUMP +_SYSC_EXIT
 	;; handler stuff
 
 
@@ -646,12 +648,13 @@ handler_kernel_not_found:
 
 handler_process_table_empty:
 	;; Just refer to init and see how many processes are running
-	JUMP +_handler_process_table_empty_ _pt_amt_process
+	CALL +_SYSC_GET_ROM_COUNT *+handler_process_table_empty_
 	COPY 	*%FP 	+_process_table_empty_message
 
 	handler_process_table_empty_:
 		COPY *%FP +_static_error_free_shutdown_message
 		CALL +_procedure_print *+handler_process_table_empty_shutdown:
+
 	handler_process_table_empty_shutdown:
 		JUMP +_SYSC_EXIT
 
