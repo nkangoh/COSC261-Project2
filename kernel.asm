@@ -1,4 +1,6 @@
 .Code
+;;; Robert Chen, Tabeth Nkangoh, Vivian Yee
+	
 ;;; Step 48 takes IP to the end of the BIOS
 ;;; 	set kernel_base and kernel_limit
 	COPY *+kernel_limit %G0
@@ -704,6 +706,9 @@ IP_T4: ADDUS *+_TEMP_IP +IP_T4 64 ;; jump to ADDUS
 			BEQ +create_P3 *+ROM_amount 3
 
 			;; set the base and limit with 1KB padding, and 500b space b/w processes
+	;; We meant to perform DMA here and create the process in RAM, between
+	;; the preset Base and Limit in the PT.
+	;; But....we ran out of time. Big sorry :(
 create_P1:
 				COPY *+P1_Base 0x10000
 				COPY *+P1_Limit 0x15000
@@ -884,37 +889,37 @@ handler_preserve_registers_P3:
 ;; restore
 handler_restore_registers_P1:
 
-	COPY %G0 +P1_register_G0
-	COPY %G1 +P1_register_G1
-	COPY %G2 +P1_register_G2
-	COPY %G3 +P1_register_G3
-	COPY %G4 +P1_register_G4
-	COPY %G5 +P1_register_G5
-	COPY %SP +P1_register_SP
-	COPY %FP +P1_register_FP
+	COPY %G0 *+P1_register_G0
+	COPY %G1 *+P1_register_G1
+	COPY %G2 *+P1_register_G2
+	COPY %G3 *+P1_register_G3
+	COPY %G4 *+P1_register_G4
+	COPY %G5 *+P1_register_G5
+	COPY %SP *+P1_register_SP
+	COPY %FP *+P1_register_FP
 
 handler_restore_registers_P2:
 
-	COPY %G0 +P2_register_G0
-	COPY %G1 +P2_register_G1
-	COPY %G2 +P2_register_G2
-	COPY %G3 +P2_register_G3
-	COPY %G4 +P2_register_G4
-	COPY %G5 +P2_register_G5
-	COPY %SP +P2_register_SP
-	COPY %FP +P2_register_FP
+	COPY %G0 *+P2_register_G0
+	COPY %G1 *+P2_register_G1
+	COPY %G2 *+P2_register_G2
+	COPY %G3 *+P2_register_G3
+	COPY %G4 *+P2_register_G4
+	COPY %G5 *+P2_register_G5
+	COPY %SP *+P2_register_SP
+	COPY %FP *+P2_register_FP
 
 
 handler_restore_registers_P3:
 
-	COPY %G0 +P3_register_G0
-	COPY %G1 +P3_register_G1
-	COPY %G2 +P3_register_G2
-	COPY %G3 +P3_register_G3
-	COPY %G4 +P3_register_G4
-	COPY %G5 +P3_register_G5
-	COPY %SP +P3_register_SP
-	COPY %FP +P3_register_FP
+	COPY %G0 *+P3_register_G0
+	COPY %G1 *+P3_register_G1
+	COPY %G2 *+P3_register_G2
+	COPY %G3 *+P3_register_G3
+	COPY %G4 *+P3_register_G4
+	COPY %G5 *+P3_register_G5
+	COPY %SP *+P3_register_SP
+	COPY %FP *+P3_register_FP
 
 
 handler_jump_back: 
