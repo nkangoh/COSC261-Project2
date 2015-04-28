@@ -616,7 +616,28 @@ handler_system_call:
 			COPY %FP *%G5
 			ADDUS %G5 %G5 8
 			COPY %SP *%G5
-			COPY %G0 *%SP		
+			COPY %G0 *%SP
+
+		_PRINT:
+			;; caller prologue
+			;; preserve frame pointer 
+			SUBUS %SP %SP 8
+			COPY *%SP %FP
+			;; put in arguments
+			SUBUS %FP %SP 4
+			COPY *%FP _null_terminated_string
+			;; stack pointer is at top of stack
+			SUBUS %SP %SP 4
+			;; %G5 points to return address
+			ADDUS %G5 %FP 8
+			;; call print
+			CALL +_procedure_print *%G5
+			;; caller epilogue
+			ADDUS %G5 %FP 4
+			COPY %FP *%G5
+			ADDUS %G5 %G5 4
+			COPY %SP *%G5
+	
 
 		JUMP +_SYSC_EXIT
 	;; handler stuff
