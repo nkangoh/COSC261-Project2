@@ -597,11 +597,11 @@ handler_system_call:
 	BEQ +_SYSC_CREATE %G0 1
 	BEQ +_SYSC_GET_ROM_COUNT %G0 2
 	BEQ +_SYSC_FIND_DEVICE %G0 3
-	
-	handler_system_call_:
+
+handler_system_call_:
 		;; Take parameters
 		;; Jump to the appropriate system call handler
-		_SYSC_EXIT:
+_SYSC_EXIT:
 			
 			;; decrement the rom amount, delete the
 			;; base and limit of the given rom and
@@ -615,8 +615,8 @@ handler_system_call:
 			BEQ +exit_P2 	%G0	2
 			BEQ +exit_P3 	%G0	3
 
-			;; figure out how to set them to 0 (null them out)	
-			exit_P1:
+			;; figure out how to set them to 0 (null them out)
+exit_P1:
 			        COPY	+P1_Base 	0	
 			        COPY 	+P1_Limit 	0	
 				SETBS 	+P1_Base
@@ -633,7 +633,7 @@ handler_system_call:
 
 				JUMP 	+P2_IP
 
-			exit_P2:
+exit_P2:
 			        COPY 	+P2_Base 	0	
 			        COPY 	+P2_Limit 	0	
 				SETBS 	+P2_Base
@@ -651,7 +651,7 @@ handler_system_call:
 
 				JUMP 	+P1_IP
 
-			exit_P3:
+exit_P3:
 			        COPY 	+P3_Base 	0	
 			        COPY 	+P3_Limit 	0	
 				SETBS 	+P3_Base
@@ -674,7 +674,7 @@ handler_system_call:
 			;;Parameter [%G1] = pointer to device table entry
 			;;Parameter [%G2] = current process number
 
-		 IP_T4: ADDUS +_TEMP_IP +IP_T4 16 ;; jump to ADDUS
+IP_T4: ADDUS +_TEMP_IP +IP_T4 16 ;; jump to ADDUS
 			BEQ handler_preserve_registers_P1 %G2 1
 			BEQ handler_preserve_registers_P2 %G2 2
 			BEQ handler_preserve_registers_P3 %G2 3
@@ -700,21 +700,21 @@ handler_system_call:
 			BEQ +create_P3 +ROM_amount 3
 
 			;; set the base and limit with 1KB padding, and 500b space b/w processes
-			create_P1:
+create_P1:
 				COPY +P1_Base 0x10000
 				COPY +P1_Limit 0x15000
 				SETBS +P1_Base
 				SETLM +P1_Limit
 				JUMPMD *P1_Base 0x6
 
-			create_P2:
+create_P2:
 				COPY +P2_Base 0x20000
 				COPY +P2_Limit 0x25000
 				SETBS +P2_Base
 				SETLM +P2_Limit
 				JUMPMD *P2_Base 0x6
 
-			create_P3:
+create_P3:
 				COPY +P3_Base 0x30000
 				COPY +P3_Limit 0x35000
 				SETBS +P3_Base
@@ -722,12 +722,12 @@ handler_system_call:
 				JUMPMD *P3_Base 0x6
 		
 
-		_SYSC_GET_ROM_COUNT:
+_SYSC_GET_ROM_COUNT:
 			;; copy into a register (G0) the current rom amount
 			COPY %G0 +ROM_amount
 			JUMP *%FP
 
-		_SYSC_FIND_DEVICE:
+_SYSC_FIND_DEVICE:
 			;; caller prologue
 			;; preserve frame pointer 
 			SUBUS %SP %SP 12
@@ -750,7 +750,7 @@ handler_system_call:
 			COPY %SP *%G5
 			COPY %G0 *%SP		
 			JUMP *%FP
-		_PRINT:
+_PRINT:
 			;; caller prologue
 			;; preserve frame pointer 
 			SUBUS %SP %SP 8
