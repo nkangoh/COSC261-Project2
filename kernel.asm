@@ -340,24 +340,69 @@ _procedure_scroll_console:
 handler_invalid_address:
 	;; Print handler error
 	;; Set the string to be copied
+	;; caller prologue
+	;; preserve frame pointer 
+	SUBUS %SP %SP 8
+	COPY *%SP %FP
+	;; put in arguments
+	SUBUS %FP %SP 4
 	COPY *%FP +_invalid_address_message
-	CALL +_procedure_print *%FP
+	;; stack pointer is at top of stack
+	SUBUS %SP %SP 4
+	;; %G5 points to return address
+	ADDUS %G5 %FP 8
+	;; call print
+	CALL +_procedure_print *%G5
+	;; caller epilogue
+	ADDUS %G5 %FP 4
+	COPY %FP *%G5
+	ADDUS %G5 %G5 4
+	COPY %SP *%G5
+	;; handler stuff
+
 	handler_invalid_address_:
 		JUMP +_SYSC_EXIT
 	;; handler stuff	
 
 
 handler_invalid_register:
+	SUBUS %SP %SP 8
+	COPY *%SP %FP
+	;; put in arguments
+	SUBUS %FP %SP 4
 	COPY *%FP +_invalid_register_message
-	CALL +_procedure_print *+handler_invalid_address_
-	handler_invalid_register_:
-		JUMP +_SYSC_EXIT
+	;; stack pointer is at top of stack
+	SUBUS %SP %SP 4
+	;; %G5 points to return address
+	ADDUS %G5 %FP 8
+	;; call print
+	CALL +_procedure_print *%G5
+	;; caller epilogue
+	ADDUS %G5 %FP 4
+	COPY %FP *%G5
+	ADDUS %G5 %G5 4
+	COPY %SP *%G5
+	JUMP +_SYSC_EXIT
 	;; handler stuff
 
 handler_bus_error:
+	SUBUS %SP %SP 8
+	COPY *%SP %FP
+	;; put in arguments
+	SUBUS %FP %SP 4
 	COPY *%FP +_bus_error_message
-	CALL +_procedure_print *%FP
-		JUMP +_SYSC_EXIT
+	;; stack pointer is at top of stack
+	SUBUS %SP %SP 4
+	;; %G5 points to return address
+	ADDUS %G5 %FP 8
+	;; call print
+	CALL +_procedure_print *%G5
+	;; caller epilogue
+	ADDUS %G5 %FP 4
+	COPY %FP *%G5
+	ADDUS %G5 %G5 4
+	COPY %SP *%G5
+	JUMP +_SYSC_EXIT
 	;; handler stuff
 
 
@@ -365,8 +410,23 @@ handler_clock_alarm:
 	;;Parameters:
 	;;[%G0] -- Current device number
 
-	COPY *%FP _clock_alarm_message
-	CALL +_procedure_print *+handler_invalid_address_
+	SUBUS %SP %SP 8
+	COPY *%SP %FP
+	;; put in arguments
+	SUBUS %FP %SP 4
+	COPY *%FP +_clock_alarm_message
+	;; stack pointer is at top of stack
+	SUBUS %SP %SP 4
+	;; %G5 points to return address
+	ADDUS %G5 %FP 8
+	;; call print
+	CALL +_procedure_print *%G5
+	;; caller epilogue
+	ADDUS %G5 %FP 4
+	COPY %FP *%G5
+	ADDUS %G5 %G5 4
+	COPY %SP *%G5
+	JUMP +_SYSC_EXIT
 
 	;; preserve registers
 
@@ -420,48 +480,119 @@ IP_T3:  ADDUS +_TEMP_IP +IP_T3 16 ;; jump to ADDUS
 
 
 handler_divide_by_zero:
-	COPY *%FP _divide_by_zero_message
-	CALL +_procedure_print *+handler_divide_by_zero_
-	handler_divide_by_zero_:
-		JUMP +_SYSC_EXIT
-	;; handler stuff
+	SUBUS %SP %SP 8
+	COPY *%SP %FP
+	;; put in arguments
+	SUBUS %FP %SP 4
+	COPY *%FP +_divide_by_zero_message
+	;; stack pointer is at top of stack
+	SUBUS %SP %SP 4
+	;; %G5 points to return address
+	ADDUS %G5 %FP 8
+	;; call print
+	CALL +_procedure_print *%G5
+	;; caller epilogue
+	ADDUS %G5 %FP 4
+	COPY %FP *%G5
+	ADDUS %G5 %G5 4
+	COPY %SP *%G5
+	JUMP +_SYSC_EXIT
 
 
 handler_overflow:
-	COPY *%FP _overflow_message
-	CALL +_procedure_print *+handler_overflow_
-	handler_overflow_:
-		JUMP +_SYSC_EXIT
-	;; handler stuff
+	SUBUS %SP %SP 8
+	COPY *%SP %FP
+	;; put in arguments
+	SUBUS %FP %SP 4
+	COPY *%FP +_overflow_message
+	;; stack pointer is at top of stack
+	SUBUS %SP %SP 4
+	;; %G5 points to return address
+	ADDUS %G5 %FP 8
+	;; call print
+	CALL +_procedure_print *%G5
+	;; caller epilogue
+	ADDUS %G5 %FP 4
+	COPY %FP *%G5
+	ADDUS %G5 %G5 4
+	COPY %SP *%G5
+	JUMP +_SYSC_EXIT
 
 
 handler_invalid_instruction:
-	COPY *%FP _invalid_instruction_message
-	CALL +_procedure_print *+handler_invalid_instruction_
-	handler_invalid_instruction_:
-		JUMP +_SYSC_EXIT
-	;; handler stuff
-
+	SUBUS %SP %SP 8
+	COPY *%SP %FP
+	;; put in arguments
+	SUBUS %FP %SP 4
+	COPY *%FP +_invalid_instruction_message
+	;; stack pointer is at top of stack
+	SUBUS %SP %SP 4
+	;; %G5 points to return address
+	ADDUS %G5 %FP 8
+	;; call print
+	CALL +_procedure_print *%G5
+	;; caller epilogue
+	ADDUS %G5 %FP 4
+	COPY %FP *%G5
+	ADDUS %G5 %G5 4
+	COPY %SP *%G5
+	JUMP +_SYSC_EXIT
 
 handler_permission_violation:
-	COPY *%FP _permission_violation_message
-	CALL +_procedure_print *+handler_permission_violation_
-	handler_permission_violation_:
-		JUMP +_SYSC_EXIT
-	;; handler stuff
-
+	SUBUS %SP %SP 8
+	COPY *%SP %FP
+	;; put in arguments
+	SUBUS %FP %SP 4
+	COPY *%FP +_permission_violation_message
+	;; stack pointer is at top of stack
+	SUBUS %SP %SP 4
+	;; %G5 points to return address
+	ADDUS %G5 %FP 8
+	;; call print
+	CALL +_procedure_print *%G5
+	;; caller epilogue
+	ADDUS %G5 %FP 4
+	COPY %FP *%G5
+	ADDUS %G5 %G5 4
+	COPY %SP *%G5
+	JUMP +_SYSC_EXIT
 
 handler_invalid_shift_amount:
-	COPY *%FP _invalid_shift_amount_message
-	CALL +_procedure_print *+handler_invalid_shift_amount_
-	handler_invalid_shift_amount_:
-		JUMP +_SYSC_EXIT
-	;; handler stuff
-
+	SUBUS %SP %SP 8
+	COPY *%SP %FP
+	;; put in arguments
+	SUBUS %FP %SP 4
+	COPY *%FP +_invalid_shift_amount_message
+	;; stack pointer is at top of stack
+	SUBUS %SP %SP 4
+	;; %G5 points to return address
+	ADDUS %G5 %FP 8
+	;; call print
+	CALL +_procedure_print *%G5
+	;; caller epilogue
+	ADDUS %G5 %FP 4
+	COPY %FP *%G5
+	ADDUS %G5 %G5 4
+	COPY %SP *%G5
+	JUMP +_SYSC_EXIT
 
 handler_system_call:
-	COPY *%FP _system_call_message
-	
+	SUBUS %SP %SP 8
+	COPY *%SP %FP
+	;; put in arguments
+	SUBUS %FP %SP 4
+	COPY *%FP +_system_call_message
+	;; stack pointer is at top of stack
+	SUBUS %SP %SP 4
+	;; %G5 points to return address
+	ADDUS %G5 %FP 8
+	;; call print
+	CALL +_procedure_print *%G5
+	;; caller epilogue
+	ADDUS %G5 %FP 4
+	COPY %FP *%G5
+	ADDUS %G5 %G5 4
+	COPY %SP *%G5
 	BEQ +_SYSC_EXIT %G0 0
 	BEQ +_SYSC_CREATE %G0 1
 	BEQ +_SYSC_GET_ROM_COUNT %G0 2
@@ -642,34 +773,87 @@ handler_system_call:
 
 
 handler_invalid_device_value:
-	CALL +_procedure_print *+handler_invalid_address_
-	handler_invalid_device_value_:
-		JUMP +_SYSC_EXIT
+	SUBUS %SP %SP 8
+	COPY *%SP %FP
+	;; put in arguments
+	SUBUS %FP %SP 4
+	COPY *%FP +_invalid_device_value_message
+	;; stack pointer is at top of stack
+	SUBUS %SP %SP 4
+	;; %G5 points to return address
+	ADDUS %G5 %FP 8
+	;; call print
+	CALL +_procedure_print *%G5
+	;; caller epilogue
+	ADDUS %G5 %FP 4
+	COPY %FP *%G5
+	ADDUS %G5 %G5 4
+	COPY %SP *%G5
+	JUMP +_SYSC_EXIT
 	;; handler stuff
 
 
 handler_device_failure: 
-	CALL +_procedure_print *+handler_invalid_address_
-	handler_device_failure_:
-		JUMP +_SYSC_EXIT
-	;; handler stuff
+	SUBUS %SP %SP 8
+	COPY *%SP %FP
+	;; put in arguments
+	SUBUS %FP %SP 4
+	COPY *%FP +_device_failure_message
+	;; stack pointer is at top of stack
+	SUBUS %SP %SP 4
+	;; %G5 points to return address
+	ADDUS %G5 %FP 8
+	;; call print
+	CALL +_procedure_print *%G5
+	;; caller epilogue
+	ADDUS %G5 %FP 4
+	COPY %FP *%G5
+	ADDUS %G5 %G5 4
+	COPY %SP *%G5
+	JUMP +_SYSC_EXIT
 
 handler_kernel_not_found:
 	;; Panic if the kernel has an error, but being here means there was 
 	;; an error in the kernel, so print the message
-	COPY 	*%SP 	+_kernel_error_message ;; set the kernel printing message
-	CALL +_procedure_print  *+handler_kernel_failure_ ;; Should print and jump back to the failure, which halts
-	handler_kernel_failure_:
-		HALT
+	SUBUS %SP %SP 8
+	COPY *%SP %FP
+	;; put in arguments
+	SUBUS %FP %SP 4
+	COPY *%FP +_kernel_error_message
+	;; stack pointer is at top of stack
+	SUBUS %SP %SP 4
+	;; %G5 points to return address
+	ADDUS %G5 %FP 8
+	;; call print
+	CALL +_procedure_print *%G5
+	;; caller epilogue
+	ADDUS %G5 %FP 4
+	COPY %FP *%G5
+	ADDUS %G5 %G5 4
+	COPY %SP *%G5
+	HALT
 
 handler_process_table_empty:
 	;; Just refer to init and see how many processes are running
 	BEQ +handler_process_table_empty_ ROM_amount 0
-	COPY 	*%FP 	+_process_table_empty_message
 
 	handler_process_table_empty_:
-		COPY *%FP +_error_free_shutdown_message
-		;;CALL +_procedure_print *+handler_process_table_empty_shutdown:
+		SUBUS %SP %SP 8
+		COPY *%SP %FP
+		;; put in arguments
+		SUBUS %FP %SP 4
+		COPY *%FP +_process_table_empty_message
+		;; stack pointer is at top of stack
+		SUBUS %SP %SP 4
+		;; %G5 points to return address
+		ADDUS %G5 %FP 8
+		;; call print
+		CALL +_procedure_print *%G5
+		;; caller epilogue
+		ADDUS %G5 %FP 4
+		COPY %FP *%G5
+		ADDUS %G5 %G5 4
+		COPY %SP *%G5
 
 	handler_process_table_empty_shutdown:
 		JUMP +_SYSC_EXIT
