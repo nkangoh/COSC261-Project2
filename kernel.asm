@@ -380,7 +380,7 @@ IP_T1: 	ADDUS +_TEMP_IP +IP_T1 16 ;; jump to ADDUS
 	BEQ +findnext_P3 %G0 3
 
 findnext_P1:	BNEQ +findnext_P1P2 +P2_Base 0
-	BNEQ +findnextP1P3 +P3_Base 0
+	BNEQ +findnext_P1P3 +P3_Base 0
 	COPY %G0 1
 	JUMP +IP_T3 
 findnext_P1P2:	COPY %G0 2
@@ -389,7 +389,7 @@ findnext_P1P3:	COPY %G0 3
 	JUMP +IP_T2
 
 findnext_P2:	BNEQ +findnext_P2P3 +P3_Base 0
-	BNEQ +findnextP2P1 +P1_Base 0
+	BNEQ +findnext_P2P1 +P1_Base 0
 	COPY %G0 2
 	JUMP +IP_T3 
 findnext_P2P3:	COPY %G0 3
@@ -398,7 +398,7 @@ findnext_P2P1:	COPY %G0 1
 	JUMP +IP_T2
 
 findnext_P3:	BNEQ +findnext_P3P1 +P1_Base 0
-	BNEQ +findnextP3P2 +P2_Base 0
+	BNEQ +findnext_P3P2 +P2_Base 0
 	COPY %G0 3
 	JUMP +IP_T3 
 findnext_P3P1:	COPY %G0 1
